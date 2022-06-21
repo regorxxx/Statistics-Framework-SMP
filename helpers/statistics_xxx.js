@@ -25,6 +25,9 @@ function _chart({
 	// Global tooltip
 	this.tooltip = new _tt(null);
 	
+	/*
+		Paint
+	*/
 	this.paintBg = (gr) => {
 		if (this.background.imageGDI) {
 			gr.DrawImage(this.background.imageGDI, this.x, this.y, this.w, this.h, 0, 0, this.w, this.h);
@@ -251,69 +254,21 @@ function _chart({
 		this.paintGraph(gr);
 	};
 	
-	this.randomColor = () => {
-		return RGB(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255));
-	};
-	
+	/*
+		Helpers
+	*/
 	this.steps = (min, max, num = 10) => {
 		const step = Math.round((max - min) / num);
 		return range(min, max, step || 1); 
 	};
 	
-	this.sort = () => {
-		if (!this.dataManipulation.sort) {return;}
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.sort(this.dataManipulation.sort)});
+	this.randomColor = () => {
+		return RGB(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255));
 	};
 	
-	this.cleanData = () => {
-		if (!this.dataDraw) {return;}
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter((point) => {
-				return (point.hasOwnProperty('x') && point.x !== null && point.x !== '' && point.hasOwnProperty('y') && Number.isFinite(point.y));
-			});
-		});
-	};
-	
-	this.filter = () => {
-		if (!this.dataManipulation.filter) {return;}
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter(this.dataManipulation.filter)});
-	};
-	
-	this.slice = () => {
-		if (!this.dataManipulation.slice || !this.dataManipulation.slice.length === 2) {return;}
-		// If end is greater than the length of the array, it uses the length of the array
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.slice(...this.dataManipulation.slice)});
-	};
-
-	this.normal = (bInverse = false) => {
-		const sort = bInverse ? (a, b) => {return b.y - a.y;} : (a, b) => {return a.y - b.y;}
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.sort(sort).reduceRight((acc, val, i) => {return i % 2 === 0 ? [...acc, val] : [val, ...acc];}, []);});
-		if (!this.dataManipulation.slice || !this.dataManipulation.slice.length === 2) {return;}
-		this.dataDraw = this.dataDraw.map((serie) => {
-			const center = Math.round(serie.length / 2) + this.dataManipulation.slice[0];
-			const left = center - this.dataManipulation.slice[1];
-			const rigth = center + this.dataManipulation.slice[1];
-			return serie.slice(left - (bInverse ? 2 : 1), rigth);
-		});
-	};
-	
-	this.normalInverse = () => {
-		this.normal(true);
-	};
-	
-	this.distribution = (dist = this.dataManipulation.distribution || '') => {
-		switch (dist.toLowerCase()) {
-			case 'normal':
-				this.normal();
-				return true;
-			case 'normal inverse':
-				this.normalInverse();
-				return true;
-			case 'none':
-			default: 
-				return false;
-		}
-	};
-	
+	/*
+		Callbacks
+	*/
 	this.tracePoint = (x, y) => {
 		for (let i = 0;  i < this.series; i++) {
 			const serie = this.dataCoords[i];
@@ -361,7 +316,74 @@ function _chart({
 		return false;
 	};
 	
-	this.nFormatter = (num, digits) => {
+	/*
+		Data manipulation
+	*/
+	this.sort = () => { // Sort points with user provided function
+		if (!this.dataManipulation.sort) {return;}
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.sort(this.dataManipulation.sort)});
+	};
+	
+	this.cleanData = () => { // Filter points without valid x or y values
+		if (!this.dataDraw) {return;}
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter((point) => {
+				return (point.hasOwnProperty('x') && point.x !== null && point.x !== '' && point.hasOwnProperty('y') && Number.isFinite(point.y));
+			});
+		});
+	};
+	
+	this.filter = () => { // Filter points with user provided function
+		if (!this.dataManipulation.filter) {return;}
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter(this.dataManipulation.filter)});
+	};
+	
+	this.slice = () => { // Draw only selected points
+		if (!this.dataManipulation.slice || !this.dataManipulation.slice.length === 2) {return;}
+		// If end is greater than the length of the array, it uses the length of the array
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.slice(...this.dataManipulation.slice)});
+	};
+
+	this.normal = (bInverse = false) => { // Sort as normal distribution
+		const sort = bInverse ? (a, b) => {return b.y - a.y;} : (a, b) => {return a.y - b.y;}
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.sort(sort).reduceRight((acc, val, i) => {return i % 2 === 0 ? [...acc, val] : [val, ...acc];}, []);});
+		if (!this.dataManipulation.slice || !this.dataManipulation.slice.length === 2) {return;}
+		this.dataDraw = this.dataDraw.map((serie) => {
+			const center = Math.round(serie.length / 2) + this.dataManipulation.slice[0];
+			const left = center - this.dataManipulation.slice[1];
+			const rigth = center + this.dataManipulation.slice[1];
+			return serie.slice(left - (bInverse ? 2 : 1), rigth);
+		});
+	};
+	
+	this.normalInverse = () => { // Tails of normal distribution
+		this.normal(true);
+	};
+	
+	this.distribution = (dist = this.dataManipulation.distribution || '') => { // Apply known distributions
+		switch (dist.toLowerCase()) {
+			case 'normal':
+				this.normal();
+				return true;
+			case 'normal inverse':
+				this.normalInverse();
+				return true;
+			case 'none':
+			default: 
+				return false;
+		}
+	};
+	
+	this.manipulateData = () => {
+		this.dataDraw = this.data.map((serie) => {return [...serie];})
+		this.cleanData();
+		this.filter();
+		if (!this.distribution()) {
+			this.sort();
+			this.slice();
+		}
+	};
+	
+	this.nFormatter = (num, digits) => { // Y axis formatter
 		const SI_SYMBOL = ["", "k", "M", "G", "T", "P", "E"];
 		const tier = Math.log10(Math.abs(num)) / 3 | 0;
 		// if zero, we don't need a suffix
@@ -375,6 +397,9 @@ function _chart({
 		return scaled.toFixed(1) + suffix;
 	};
 	
+	/*
+		Config related
+	*/
 	this.changeConfig = ({data, colors, graph, dataManipulation, background, grid, axis, margin, x, y, w, h, title, gFont, bPaint = true}) => {
 		if (gFont) {this.gFont = gFont;}
 		if (data) {this.data = data; this.dataDraw = data; this.series = data.length;}
@@ -399,16 +424,6 @@ function _chart({
 		if (data || dataManipulation) {this.initData();}
 		window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
 		return this;
-	};
-	
-	this.manipulateData = () => {
-		this.dataDraw = this.data.map((serie) => {return [...serie];})
-		this.cleanData();
-		this.filter();
-		if (!this.distribution()) {
-			this.sort();
-			this.slice();
-		}
 	};
 	
 	this.cleanPoints = () => {
