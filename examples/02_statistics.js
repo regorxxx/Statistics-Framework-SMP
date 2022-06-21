@@ -146,6 +146,7 @@ const chartD = new _chart({
 /* 
 	Put together for easy iteration later...
 */
+const rows = 2, columns = 2;
 const charts = [chartA, chartB, chartC, chartD];
 charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
 
@@ -161,15 +162,15 @@ function on_paint(gr) {
 function on_size() {
 	if (!window.ID) {return;}
 	if (!window.Width || !window.Height) {return;}
-	for (let i = 0; i < rows; i++) {
-		for (let j = 0; j < columns; j++) {
-			const w = window.Width / rows;
-			const h = window.Height / columns * (i + 1);
-			const x = w * j;
-			const y = window.Height / columns * i;
-			nCharts[i][j].changeConfig({x, y, w, h});
-		}
-	}
+	[[0, 0],[0, 1],[1, 0],[1, 1]].forEach((pair, k) => {
+		const [i, j] = pair;
+		const w = window.Width / rows;
+		const h = window.Height / columns * (i + 1);
+		const x = w * j;
+		const y = window.Height / columns * i;
+		charts[k].changeConfig({x, y, w, h, bPaint: false});
+	});
+	window.Repaint();
 }
 
 function on_mouse_move(x, y, mask) {

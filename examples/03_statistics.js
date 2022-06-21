@@ -165,9 +165,10 @@ function on_size() {
 			const h = window.Height / columns * (i + 1);
 			const x = w * j;
 			const y = window.Height / columns * i;
-			nCharts[i][j].changeConfig({x, y, w, h});
+			nCharts[i][j].changeConfig({x, y, w, h, bPaint: false});
 		}
 	}
+	window.Repaint();
 }
 
 function on_mouse_move(x, y, mask) {

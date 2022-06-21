@@ -139,3 +139,15 @@ function invert(color, bBW = false) {
 	// helpers_xxx_prototypes.js
 */
 const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+
+function _b(value) {
+	return '[' + value + ']';
+}
+
+function _t(tag) {
+	return '%' + tag + '%';
+}
+
+function _bt(tag) {
+	return _b(_t(tag));
+}
