@@ -265,6 +265,14 @@ function _chart({
 		this.dataDraw = this.dataDraw.map((serie) => {return serie.sort(this.dataManipulation.sort)});
 	};
 	
+	this.cleanData = () => {
+		if (!this.dataDraw) {return;}
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter((point) => {
+				return (point.hasOwnProperty('x') && point.x !== null && point.x !== '' && point.hasOwnProperty('y') && Number.isFinite(point.y));
+			});
+		});
+	};
+	
 	this.filter = () => {
 		if (!this.dataManipulation.filter) {return;}
 		this.dataDraw = this.dataDraw.map((serie) => {return serie.filter(this.dataManipulation.filter)});
@@ -395,6 +403,7 @@ function _chart({
 	
 	this.manipulateData = () => {
 		this.dataDraw = this.data.map((serie) => {return [...serie];})
+		this.cleanData();
 		this.filter();
 		if (!this.distribution()) {
 			this.sort();
