@@ -17,9 +17,8 @@ A helper script for [Spider Monkey Panel](https://theqwertiest.github.io/foo_spi
 ![statistics1](https://user-images.githubusercontent.com/83307074/174884116-4dd83189-392b-45c4-be24-c819bbd5a204.gif)
 
 ## Usage
-First create the chart object. That's the main one and also includes a 'main menu' to append items to it:
+First create the chart object. In this case 2 series are added:
 ```javascript
-include('helpers\\statistics_xxx.js');
 const chart = new _chart({
 	data: [
 		[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}], 
@@ -74,7 +73,7 @@ function on_mouse_rbtn_up(x, y) {
 	return true; // left shift + left windows key will bypass this callback and will open default context menu.
 }
 ```
-![statistics2](https://user-images.githubusercontent.com/83307074/174884430-92f78010-87ca-4ac6-897e-6bf896a53fe3.gif)
+![statistics3](https://user-images.githubusercontent.com/83307074/174886889-e5cb7a2c-6afa-4a2e-bffa-a416b71bf1d2.gif)
 
 There are more usage examples on the 'examples' folder.
 
