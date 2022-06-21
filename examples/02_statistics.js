@@ -104,9 +104,9 @@ const chartB = new _chart({
 	...defaultConfig,
 	data: getData('tf', 'style'),
 	graph: {type: 'scatter', borderWidth: _scale(3), point: 'crux'},
-	axis:{
-		x: {key: 'style'}, 
-		y: {key: 'tracks'}
+	axis: {
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'style'}, 
+		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: window.Width / 2,
 	w: window.Width / 2,
@@ -120,8 +120,8 @@ const chartC = new _chart({
 	graph: {type: 'lines', borderWidth: _scale(3)},
 	dataManipulation: {sort: null, filter: (a) => {return a.y;}, slice: [0, 2], distribution: 'normal'},
 	axis: {
-		x: {key: 'artist'},
-		y: {key: 'plays per track'}
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'artist'}, 
+		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'plays per track'}
 	},
 	x: 0,
 	w: window.Width / 2,
@@ -134,8 +134,8 @@ const chartD = new _chart({
 	data: getData('tf', 'mood'),
 	dataManipulation: {sort: null, filter: null, slice: [0, 4], distribution: 'normal'},
 	axis: {
-		x: {key: 'mood'}, 
-		y: {key: 'tracks'}
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'mood'}, 
+		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: window.Width / 2,
 	w: window.Width / 2,
@@ -156,7 +156,7 @@ charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click 
 function on_paint(gr) {
 	if (!window.ID) {return;}
 	if (!window.Width || !window.Height) {return;}
-	charts.forEach((chart) => {return chart.paint(gr);});
+	charts.forEach((chart) => {chart.paint(gr);});
 }
 
 function on_size() {

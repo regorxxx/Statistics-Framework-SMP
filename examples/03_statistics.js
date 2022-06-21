@@ -153,7 +153,7 @@ charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click 
 function on_paint(gr) {
 	if (!window.ID) {return;}
 	if (!window.Width || !window.Height) {return;}
-	charts.forEach((chart) => {return chart.paint(gr);});
+	charts.forEach((chart) => {chart.paint(gr);});
 }
 
 function on_size() {
