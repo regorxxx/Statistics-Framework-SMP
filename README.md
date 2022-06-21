@@ -21,7 +21,10 @@ First create the chart object. That's the main one and also includes a 'main men
 ```javascript
 include('helpers\\statistics_xxx.js');
 const chart = new _chart({
-	data: [[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}]],
+	data: [
+		[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}], 
+		[{x:'A', y: 3},{x:'B', y: 7},{x:'C', y: 4},{x:'D', y: 2},{x:'E', y: 5}]
+	],
 	dataManipulation: {sort: null, filter: null, slice: null, distribution: null},
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},

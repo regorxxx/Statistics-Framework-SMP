@@ -20,10 +20,10 @@ window.DefinePanel('Statistics example 1', {author:'XXX', version: '1.0.0', feat
 	color: [rgbSerie1, ...]
 	Any color not set is set randomly at startup.
 	
-	In this example only one serie is drawn and one chart.
+	In this example only two series are drawn and one chart.
 */
 const chart = new _chart({
-	data: [[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}]],
+	data: [[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}], [{x:'A', y: 3},{x:'B', y: 7},{x:'C', y: 4},{x:'D', y: 2},{x:'E', y: 5}]],
 	dataManipulation: {sort: null, filter: null, slice: null, distribution: null},
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},

@@ -107,11 +107,19 @@ function createStatisticsMenu() {
 		{
 			const subMenu = menu.newMenu('Filter...');
 			// Create a filter entry for each fraction of the max value (duplicates filtered)
-			[...new Set([this.stats.maxY, 1000, 100, 10, 10/2, 10/3, 10/5, 10/7].map((frac) => {
+			const parent = this;
+			const options = [...new Set([this.stats.maxY, 1000, 100, 10, 10/2, 10/3, 10/5, 10/7].map((frac) => {
 				return Math.round(this.stats.maxY / frac) || 1; // Don't allow zero
-			}))].map((val) => {
-				return {isEq: null,	key: this.dataManipulation.filter, value: null, newValue: filtGreat(val), entryText: 'Greater than ' + val};
-			}).forEach(createMenuOption('dataManipulation', 'filter', subMenu));
+			}))];
+			options.map((val) => {
+				return {isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtGreat(val), entryText: 'Greater than ' + val};
+			}).forEach(function (option, i){
+				createMenuOption('dataManipulation', 'filter', subMenu, false)(option);
+				menu.newCheckMenu(subMenu, option.entryText, void(0), () => {
+					const filter = this.dataManipulation.filter;
+					return filter && filter({y: options[i] + 1}) && !filter({y: options[i]}); // Just a hack to check the current value is the filter
+				});
+			}.bind(parent));
 			[
 				{entryText: 'sep'},
 				{isEq: null,	key: this.dataManipulation.filter, value: null, newValue: null, entryText: 'No filter'},

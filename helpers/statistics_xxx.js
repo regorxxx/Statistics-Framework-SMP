@@ -85,10 +85,10 @@ function _chart({
 		switch (this.graph.type) {
 			case 'lines': {
 				x -= this.axis.x.width * 1/2;
-				tickW = (w - this.margin.leftAuto) / (xAsisValues.size - 1) / this.series;
+				tickW = (w - this.margin.leftAuto) / ((xAsisValues.size - 1) || 1);
 				barW = 0;
-				offsetTickText = - tickW / this.series / 2;
-				const selBar = tickW / this.series;
+				offsetTickText = - tickW / 2;
+				const selBar = tickW;
 				// Values
 				const last = xAsisValues.size - 1;
 				gr.SetSmoothingMode(4); // Antialias for lines
@@ -123,9 +123,9 @@ function _chart({
 			}
 			case 'scatter': {
 				x -= this.axis.x.width * 1/2;
-				tickW = (w - this.margin.leftAuto) / (xAsisValues.size - 1) / this.series;
+				tickW = (w - this.margin.leftAuto) / ((xAsisValues.size - 1) || 1);
 				barW = 0;
-				offsetTickText = - tickW / this.series / 2;
+				offsetTickText = - tickW/ 2;
 				const selBar = this.graph.borderWidth * 2;
 				// Values
 				gr.SetSmoothingMode(4); // Antialias for lines
