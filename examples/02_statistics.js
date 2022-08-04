@@ -97,7 +97,8 @@ const chartA = new _chart({
 	x: 0,
 	w: window.Width / 2,
 	y: 0,
-	h: window.Height / 2
+	h: window.Height / 2,
+	title: window.Name + ' - ' + 'Graph 1 {genre - tracks}'
 });
 
 const chartB = new _chart({
@@ -111,7 +112,8 @@ const chartB = new _chart({
 	x: window.Width / 2,
 	w: window.Width / 2,
 	y: 0,
-	h: window.Height / 2
+	h: window.Height / 2,
+	title: window.Name + ' - ' + 'Graph 2 {style - tracks}'
 });
 
 const chartC = new _chart({
@@ -126,7 +128,8 @@ const chartC = new _chart({
 	x: 0,
 	w: window.Width / 2,
 	y: window.Height / 2,
-	h: window.Height
+	h: window.Height,
+	title: window.Name + ' - ' + 'Graph 2 {artist - plays per track}'
 });
 
 const chartD = new _chart({
@@ -140,7 +143,8 @@ const chartD = new _chart({
 	x: window.Width / 2,
 	w: window.Width / 2,
 	y: window.Height / 2,
-	h: window.Height
+	h: window.Height,
+	title: window.Name + ' - ' + 'Graph 2 {mood - tracks}'
 });
 
 /* 

@@ -76,7 +76,7 @@ function getData(option = 'tf', tf = 'genre') {
 	Any color not set is set randomly at startup.
 */
 const defaultConfig = {
-	data: getData('tf', 'genre'),
+	data: [], // No data is added by default to set no colors on first init
 	dataManipulation: {sort: null, filter: null, slice: [0, 4], distribution: 'normal'},
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
@@ -94,7 +94,7 @@ const defaultConfig = {
 const newConfig = [
 	[ // Row
 		{
-			data: [...getData('tf', 'genre'), ...getData('tf', 'genre')], // 2 series
+			data: Array(4).fill(...getData('tf', 'genre')), // 4 series
 			graph: {type: 'bars', borderWidth: _scale(1)},
 			axis:{
 				x: {key: 'genre'}, 
@@ -137,11 +137,12 @@ const rows = newConfig.length;
 const columns = newConfig[0].length;
 const nCharts = new Array(rows).fill(1).map((row) => {return new Array(columns).fill(1);}).map((row, i) => {
 	return row.map((cell, j) => {
-		const w = window.Width / rows;
-		const h = window.Height / columns * (i + 1);
+		const w = window.Width / columns;
+		const h = window.Height / rows * (i + 1);
 		const x = w * j;
-		const y = window.Height / columns * i;
-		return new _chart({...defaultConfig, x, y, w, h}).changeConfig({...newConfig[i][j], bPaint: false});
+		const y = window.Height / rows * i;
+		const title = window.Name + ' - ' + 'Graph ' + (1 + rows * i + j) + ' {' + newConfig[i][j].axis.x.key + ' - ' + newConfig[i][j].axis.y.key + '}';
+		return new _chart({...defaultConfig, x, y, w, h}).changeConfig({...newConfig[i][j], bPaint: false, title});
 	});
 });
 const charts = nCharts.flat(Infinity);
@@ -161,10 +162,10 @@ function on_size() {
 	if (!window.Width || !window.Height) {return;}
 	for (let i = 0; i < rows; i++) {
 		for (let j = 0; j < columns; j++) {
-			const w = window.Width / rows;
-			const h = window.Height / columns * (i + 1);
+			const w = window.Width / columns;
+			const h = window.Height / rows * (i + 1);
 			const x = w * j;
-			const y = window.Height / columns * i;
+			const y = window.Height / rows * i;
 			nCharts[i][j].changeConfig({x, y, w, h, bPaint: false});
 		}
 	}

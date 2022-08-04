@@ -35,6 +35,7 @@ const chart = new _chart({
 	w: window.Width,
 	y: 0,
 	h: window.Height,
+	title: window.Name + ' - ' + 'Graph 1 {cities - population}',
 	tooltipText: '\n\n(This is additional info)'
 });
 
