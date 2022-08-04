@@ -8,6 +8,18 @@ include(fb.ComponentPath + 'docs\\Flags.js');
 
 const WshShellUI = new ActiveXObject('WScript.Shell');
 
+// colorbrewer presets
+const colorbrewer = {
+	diverging: ['Spectral','RdYlGn','RdBu','PiYG','PRGn','RdYlBu','BrBG','RdGy','PuOr'],
+	qualitative: ['Set2','Accent','Set1','Set3','Dark2','Paired','Pastel2','Pastel1'],
+	sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn'],
+	colorBlind: [
+		diverging: ['RdBu','PiYG','PRGn','RdYlBu','BrBG','PuOr'],
+		qualitative: ['Set2','Dark2','Paired'],
+		sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn']
+	}]
+}
+
 // Cache
 const scaleDPI = {}; // Caches _scale() values;
 const fonts = {notFound: []}; // Caches _gdifont() values;
@@ -150,4 +162,15 @@ function _t(tag) {
 
 function _bt(tag) {
 	return _b(_t(tag));
+}
+
+/* 
+ helpers_xxx_basic_js.js
+ */
+let module = {}, exports = {};
+module.exports = null;
+
+function require(script) {
+	include(newScript + '.js') ;
+	return module.exports;
 }

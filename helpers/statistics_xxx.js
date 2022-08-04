@@ -1,25 +1,24 @@
 ﻿'use strict';
-//21/06/22
+//04/08/22
 
 include('statistics_xxx_helper.js');
+const Chroma = require('..\\helpers-external\\chroma.js-2.4.0\\chroma');
 
 function _chart({
 				data /* [[{x, y}, ...]]*/,
-				colors = [], /* [rgbSerie1, ...] */
-				graph = {type: 'bars', borderWidth: _scale(1), point: null},
-				dataManipulation = {sort: (a, b) => {return b.y - a.y;}, filter: null, slice: [0, 10], distribution: null},
-				background = {color: RGB(255 , 255, 255), image: null},
-				grid = {x: {show: false, color: RGB(0,0,0), width: _scale(1)}, y: {show: false, color: RGB(0,0,0), width: _scale(1)}},
-				axis = {
-						x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: ''},
-						y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 10, labels: true, key: 'tracks'}
-				},
-				margin = {left: _scale(20), right: _scale(20), top: _scale(20), bottom: _scale(20)},
+				colors = [/* rgbSerie1, ... */],
+				chroma = {/* scheme, colorBlindSafe */},
+				graph = {/* type, borderWidth, point */},
+				dataManipulation = {/* sort, filter, slice, distribution */},
+				background = {/* color, image*/},
+				grid = {x: {/* show, color, width */}, y: {/* ... */}},
+				axis = {x: {/* show, color, width, ticks, labels, key */}, y: {/* ... */}},
+				margin = {/* left, right, top, bottom */}, 
 				x = 0,
 				y = 0,
 				w = window.Width,
 				h = window.Height,
-				title = window.Name + ' {' + axis.x.key + ' - ' + axis.y.key + '}',
+				title,
 				tooltipText = ''
 		} = {}) {
 	// Global tooltip
@@ -266,6 +265,10 @@ function _chart({
 		return RGB(Math.round(Math.random() * 255), Math.round(Math.random() * 255), Math.round(Math.random() * 255));
 	};
 	
+	this.chromaColor = (scheme = this.chroma.scheme) => {
+		return Chroma.scale(scheme).colors(this.series, 'rgb').map((arr) => {return RGB(...arr);});
+	}
+	
 	/*
 		Callbacks
 	*/
@@ -400,13 +403,15 @@ function _chart({
 	/*
 		Config related
 	*/
-	this.changeConfig = ({data, colors, graph, dataManipulation, background, grid, axis, margin, x, y, w, h, title, gFont, bPaint = true}) => {
+	this.changeConfig = ({data, colors, chroma, graph, dataManipulation, background, grid, axis, margin, x, y, w, h, title, gFont, bPaint = true}) => {
 		if (gFont) {this.gFont = gFont;}
 		if (data) {this.data = data; this.dataDraw = data; this.series = data.length;}
 		if (dataManipulation) {this.dataManipulation = {...this.dataManipulation, ...dataManipulation};}
 		if (graph) {this.graph = {...this.graph, ...graph};}
 		if (background) {this.background = {...this.background, ...background}; this.background.imageGDI = this.background.image ? gdi.Image(this.background.image) : null;}
-		if (colors) {this.colors = colors; this.checkColors();}
+		if (colors) {this.colors = colors;}
+		if (chroma) {this.chroma = {...this.chroma, ...chroma}; this.checkScheme();}
+		if (colors || chroma) {this.checkColors();}
 		if (axis) {
 			if (axis.x) {this.axis.x = {...this.axis.x, ...axis.x};}
 			if (axis.y) {this.axis.y = {...this.axis.y, ...axis.y};}
@@ -432,19 +437,85 @@ function _chart({
 		this.stats = {maxY: 0, minY: 0};
 	};
 	
-	this.checkColors = () => {
-		if (!this.colors) {this.colors = [];}
-		if (this.colors.length !== this.series) {
-			for (let i = this.colors.length; i < this.series; i++) {
-				this.colors.push(this.randomColor());
+	this.checkScheme = () => { // Check if the scheme is a valid string
+		if (!this.chroma) {this.chroma = {scheme: 'random', colorBlindSafe: false}; return false;}
+		if (this.chroma.scheme) {
+			if (typeof this.chroma.scheme === 'string') {
+				let schemeStr = this.chroma.scheme.toLowerCase();
+				if (schemeStr === 'random' || schemeStr === 'rand') {return true;}
+				else {
+					if (colorbrewer.hasOwnProperty(schemeStr)) {return true;}
+					for (let key in colorbrewer) {
+						if (colorbrewer[key].indexOf(this.chroma.scheme) !== -1) {return true;}
+					}
+				}
+				this.chroma.scheme = 'random'; // Use random as default for non valid values
+				return false;
+			} else {return true;}
+		} else {this.chroma.scheme = 'random'; return false;}
+	}
+	
+	this.checkColors = (bForce = false) => { // Fill holes and add missing colors at end
+		if (!this.colors || bForce) {this.colors = [];}
+		if (this.colors.filter(Boolean).length !== this.series) {
+			// Random colors or using Chroma scale with specific schems or array of colors
+			let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
+			let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
+			if (bRandom) {
+				this.colors.forEach((color, i) => {
+					if (!color) {this.colors[i] = this.randomColor();}
+				});
+				for (let i = this.colors.length; i < this.series; i++) {
+					this.colors.push(this.randomColor());
+				}
+			} else { // Chroma scale method
+				let scheme;
+				// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
+				if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
+					const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
+					scheme = arr[Math.floor(Math.random() * arr.length)];
+				} else { // An array of colors or colorbrewer palette (string)
+					scheme = this.chroma.scheme;
+				}
+				const scale = this.chromaColor(scheme);
+				let j = 0;
+				this.colors.forEach((color, i) => {
+					if (!color) {
+						this.colors[i] = scale[j]; 
+						j++;
+					}
+				});
+				for (let i = this.colors.length; i < this.series; i++) {
+					this.colors.push(scale[j]);
+					j++;
+				}
 			}
 		}
 	};
 	
+	this.exportConfig = () => {
+		return {
+			colors:	[...this.colors],
+			chroma:	{...this.chroma},
+			graph:	{...this.graph},
+			dataManipulation: {...this.dataManipulation},
+			background: {...this.background},
+			grid:	{x: {...this.grid.x},  y: {...this.grid.y}},
+			axis:	{x: {...this.axis.x},  y: {...this.axis.y}},
+			margin: {...this.margin},
+			x:		this.x,
+			y:		this.y,
+			w:		this.w,
+			h:		this.h,
+			title:	this.title
+		};
+	}
+	
 	this.initData = () => {
 		// Missing colors
+		this.checkScheme();
 		this.checkColors();
-		// Clean calculated offeset
+		// Clean calculated offsets
 		this.margin.leftAuto = this.margin.left;
 		// Clean and manipulate data
 		this.manipulateData();
@@ -457,25 +528,49 @@ function _chart({
 		this.initData();
 	};
 	
+	this.setDefaults = () => {
+		this.colors = [];
+		this.chroma = {scheme: 'sequential', colorBlindSafe: true}; // diverging, qualitative, sequential, random or [color, ...] see https://vis4.net/chromajs/#color-scales
+		this.graph = {type: 'bars', borderWidth: _scale(1), point: null};
+		this.dataManipulation = {sort: (a, b) => {return b.y - a.y;}, filter: null, slice: [0, 10], distribution: null};
+		this.background = {color: RGB(255 , 255, 255), image: null};
+		this.grid = {x: {show: false, color: RGB(0,0,0), width: _scale(1)}, y: {show: false, color: RGB(0,0,0), width: _scale(1)}};
+		this.axis = {
+				x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: ''},
+				y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 10, labels: true, key: 'tracks'}
+		};
+		this.margin = {left: _scale(20), right: _scale(20), top: _scale(20), bottom: _scale(20)};
+		this.title = window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
+		this.tooltipText = '';
+	}
+	
+	this.setDefaults();
 	this.gFont = _gdiFont('Segoe UI', _scale(10))
 	this.data = data;
 	this.dataDraw = data;
 	this.dataCoords = this.dataDraw.map((serie) => {return [];})
-	this.dataManipulation = dataManipulation;
+	this.dataManipulation = {...this.dataManipulation, ...dataManipulation};
 	this.series = data.length;
-	this.graph = graph;
-	this.background = background;
+	this.graph = {...this.graph, ...graph};
+	this.background = {...this.background, ...background};
 	this.colors = colors;
-	this.axis = axis;
-	this.grid = grid;
-	this.margin = margin;
+	this.chroma = {...this.chroma, ...chroma};
+	if (axis) {
+		if (axis.x) {this.axis.x = {...this.axis.x, ...axis.x};}
+		if (axis.y) {this.axis.y = {...this.axis.y, ...axis.y};}
+	}
+	if (grid) {
+		if (grid.x) {this.grid.x = {...this.grid.x, ...grid.x};}
+		if (grid.y) {this.grid.y = {...this.grid.y, ...grid.y};}
+	}
+	this.margin = {...this.margin, ...margin};
 	this.currPoint = [-1, -1];
 	this.stats = {maxY: 0, minY: 0};
 	this.x = x;
 	this.y = y;
 	this.w = w;
 	this.h = h;
-	this.title = title;
+	this.title = typeof title !== 'undefined' ? title : window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
 	this.tooltipText = tooltipText;
 	this.init();
 }
