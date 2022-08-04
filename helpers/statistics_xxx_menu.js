@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/06/22
+//04/08/22
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
@@ -19,11 +19,12 @@ function createStatisticsMenu() {
 	const menu = this.menu;
 	menu.clear(true); // Reset on every call
 	// helper
-	const createMenuOption = (key, subKey, menuName = menu.getMainMenuName(), bCheck = true) => {
+	const createMenuOption = (key, subKey, menuName = menu.getMainMenuName(), bCheck = true, addFunc = null) => {
 		return function (option) {
 			if (option.entryText === 'sep' && menu.getEntries().pop().entryText !== 'sep') {menu.newEntry({menuName, entryText: 'sep'}); return;} // Add sep only if any entry has been added
 			if (option.isEq && option.key === option.value || !option.isEq && option.key !== option.value || option.isEq === null) {
 				menu.newEntry({menuName, entryText: option.entryText, func: () => {
+					if (addFunc) {addFunc();}
 					if (subKey) {this.changeConfig({[key]: {[subKey]: option.newValue}});}
 					else {this.changeConfig({[key]: option.newValues});}
 				}});
@@ -53,19 +54,6 @@ function createStatisticsMenu() {
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'lines',			entryText: 'Lines'},
 			{entryText: 'sep'},
 		].forEach(createMenuOption('graph', 'type', subMenu));
-		const configMenu = menu.newMenu('Other config...', subMenu);
-		{
-			const configSubMenu = menu.newMenu('Point size...', configMenu);
-			[1, 2, 3, 4].map((val) => {
-				return {isEq: null,	key: this.graph.borderWidth, value: null, newValue: _scale(val), entryText: val.toString()};
-			}).forEach(createMenuOption('graph', 'borderWidth', configSubMenu));
-		}
-		if (this.graph.type.toLowerCase() === 'scatter') {
-			const configSubMenu = menu.newMenu('Point type...', configMenu);
-			['circle', 'crux'].map((val) => {
-				return {isEq: null, key: this.graph.point, value: null, newValue: val, entryText: val};
-			}).forEach(createMenuOption('graph', 'point', configSubMenu));
-		}
 	}
 	{
 		const subMenu = menu.newMenu('Distribution...');
@@ -135,6 +123,37 @@ function createStatisticsMenu() {
 		[
 			{isEq: null,	key: this.axis.y.labels, value: null,					newValue: {labels: !this.axis.y.labels},			entryText: (this.axis.y.labels ? 'Hide' : 'Show') + ' Y labels'}
 		].forEach(createMenuOption('axis', 'y', subMenu, false));
+	}
+	{
+		const subMenu = menu.newMenu('Color palette...');
+		[
+			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'diverging',			entryText: 'Diverging'},
+			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'qualitative',		entryText: 'Qualitative'},
+			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'sequential',			entryText: 'Sequential'},
+			{entryText: 'sep'},
+			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'random',				entryText: 'Random'},
+		].forEach(createMenuOption('chroma', 'scheme', subMenu, true, () => {this.colors = [];})); // Remove colors to force new palette		
+		menu.newEntry({menuName: subMenu, entryText: 'sep'});
+		menu.newEntry({menuName: subMenu, entryText: 'Colorblind safe?', func: () => {
+			this.colors = [];
+			this.changeConfig({chroma: {colorBlindSafe: !this.chroma.colorBlindSafe}});
+		}, flags: this.chroma.scheme === 'random' ? MF_GRAYED : MF_STRING});
+		menu.newCheckMenu(subMenu, 'Colorblind safe?', void(0), () => {return this.chroma.colorBlindSafe;});
+	}
+	{
+		const subMenu = menu.newMenu('Other config...');
+		{
+			const configSubMenu = menu.newMenu('Point size...', subMenu);
+			[1, 2, 3, 4].map((val) => {
+				return {isEq: null,	key: this.graph.borderWidth, value: null, newValue: _scale(val), entryText: val.toString()};
+			}).forEach(createMenuOption('graph', 'borderWidth', configSubMenu));
+		}
+		if (this.graph.type.toLowerCase() === 'scatter') {
+			const configSubMenu = menu.newMenu('Point type...', subMenu);
+			['circle', 'crux'].map((val) => {
+				return {isEq: null, key: this.graph.point, value: null, newValue: val, entryText: val};
+			}).forEach(createMenuOption('graph', 'point', configSubMenu));
+		}
 	}
 	return menu;
 }
