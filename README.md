@@ -39,7 +39,7 @@ const chart = new _chart({
 });
 ```
 
-Then, you may want to associate it to the panel callbacks for painting, resizing, mouse...:
+Then, you may want to associate it to the panel callbacks or [event listeners](https://github.com/regorxxx/Callbacks-Framework-SMP) for painting, resizing, mouse...:
 ```javascript
 function on_paint(gr) {
 	if (!window.Width || !window.Height) {return;}
