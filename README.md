@@ -10,7 +10,7 @@ A helper script for [Spider Monkey Panel](https://theqwertiest.github.io/foo_spi
 ## Features
 - Create charts: bars, scatter, line.  
 - Colors, axis, background, margins, labels and points are customizable.
-- Built-in color palettes using [Chroma](https://gka.github.io/chroma.js/) and [ColorBrewer](https://colorbrewer2.org), also colorblind friendly.
+- Built-in color palettes using [Chroma](https://gka.github.io/chroma.js/) and [ColorBrewer](https://colorbrewer2.org), also colorblind friendly presets.
 - Data may be filtered, sorted or sliced on the fly.
 - Data may be fit to a distribution or shown 'as is' (with selected sorting).
 - Multiple series can be drawn on the same chart.
