@@ -2,22 +2,40 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [0.2.0](#020---2022-08-04)
 - [0.1.0](#010---2022-06-21)
 
 ## [Unreleased][]
 ### Added
-
 ### Changed
-
 ### Removed
+### Fixed
+
+## [0.2.0] - 2022-08-04
+### Added
+- '04_statistics.js' new example showing Chroma Palettes usage.
+- Color palette entries added to built-in menu.
+- New method to set default configuration 'setDefaults()'.
+- New method to export current configuration as object 'exportConfig()' (to be saved on panel properties, etc.).
+### Changed
+- Missing colors are now set using Chroma Palettes. 'chroma.scheme' variable may be set to use 'diverging, qualitative, sequential or random'; schemes randomly use a palette found at [colorbrewer)(https://colorbrewer2.org/) for the matching type. An specific palette may also be set like 'OrRd' (sequential scheme). When setting it to 'random' the colors are randomly set without any consideration about color contrast.
+- Qualitative scheme now replaces the previous default behavior for missing colors (random).
+- Specific colors may be set for some series while leaving others to be randomly set. _chart({data, colors: [,RGB(255 , 255, 255),], ...}) will set the color for the second serie and fill the holes with the scheme used (see above). Previously holes were not allowed, so colors set were always applied to first series.
+- Minor improvements on examples.
+### Removed
+### Fixed
+- Variables not set at init for nested objects now also use default values (which was the intended behavior).
+- Setting colors variable to null broke the chart generation, now forces an empty array by default (which is latter filled with colors according to the palette schemes).
+- Fixed colors configuration on '03_statistics.js' example due to a wrong usage of default data variable.
+- Fixed position configuration on '03_statistics.js' example. No visual changes, just in case it gets reused or expanded.
 
 ## [0.1.0] - 2022-06-21
 ### Added
 - First release.
-
 ### Changed
-
 ### Removed
+### Fixed
 
-[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/d28f441...v0.1.0
