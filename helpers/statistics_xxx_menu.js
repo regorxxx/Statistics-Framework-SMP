@@ -1,5 +1,5 @@
 ﻿'use strict';
-//04/08/22
+//09/08/22
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
@@ -12,12 +12,12 @@ function bindMenu(parent) {
 }
 
 // Generic statistics menu which should work on almost any chart...
-function createStatisticsMenu() {
+function createStatisticsMenu(bClear = true) {
 	// Constants
 	this.tooltip.SetValue(null);
 	if (!this.menu) {this.menu = new _menu();}
 	const menu = this.menu;
-	menu.clear(true); // Reset on every call
+	if (bClear) {menu.clear(true);} // Reset on every call
 	// helper
 	const createMenuOption = (key, subKey, menuName = menu.getMainMenuName(), bCheck = true, addFunc = null) => {
 		return function (option) {
