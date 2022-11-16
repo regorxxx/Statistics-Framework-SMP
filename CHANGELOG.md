@@ -7,9 +7,14 @@
 
 ## [Unreleased][]
 ### Added
+- 'dataAsync' variable to pass function returning a promise or a promise, resolving to data, to initialize a graph while calculating data without blocking the panel. Once the promise is resolved the chart is repaint with the data.
+- 'configuration' variable to pass some chart exotic configs. Currently allows 'bLoadAsyncData' key, which is set to true by default. i.e. when passing async data, it will be refreshed once available. Setting it to false will not try to repaint the chart with the data automatically.
+- '05_statistics' example file to showcase the Async data feature.
 ### Changed
 ### Removed
 ### Fixed
+- Crash when no data is available painting ticks on Y axis.
+- Crash when no data is available.
 
 ## [0.2.0] - 2022-08-04
 ### Added
