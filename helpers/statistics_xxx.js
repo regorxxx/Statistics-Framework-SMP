@@ -1,11 +1,12 @@
 ﻿'use strict';
-//04/08/22
+//16/11/22
 
 include('statistics_xxx_helper.js');
 const Chroma = require('..\\helpers-external\\chroma.js-2.4.0\\chroma');
 
 function _chart({
 				data /* [[{x, y}, ...]]*/,
+				dataAsync = null, /* function returning a promise or promise, resolving to data, see above*/
 				colors = [/* rgbSerie1, ... */],
 				chroma = {/* scheme, colorBlindSafe */},
 				graph = {/* type, borderWidth, point */},
@@ -19,7 +20,8 @@ function _chart({
 				w = window.Width,
 				h = window.Height,
 				title,
-				tooltipText = ''
+				tooltipText = '',
+				configuration = {/* bLoadAsyncData: true */}
 		} = {}) {
 	// Global tooltip
 	this.tooltip = new _tt(null);
@@ -36,7 +38,7 @@ function _chart({
 	};
 	
 	this.paintGraph = (gr) => {
-		this.dataCoords = this.dataDraw.map((serie) => {return [];})
+		this.dataCoords = this.dataDraw.map((serie) => {return [];});
 		let x, y, w, h;
 		
 		// Max Y value for all series
@@ -197,7 +199,7 @@ function _chart({
 		// Y Axis ticks
 		if (this.axis.y.show) {
 			ticks.forEach((tick, i) => {
-				const yTick = y - tick / maxY * (y - h);
+				const yTick = y - tick / maxY * (y - h) || y;
 				gr.DrawLine(x - this.axis.x.width * 2, yTick, x + this.axis.x.width, yTick, this.axis.y.width / 2, this.axis.y.color);
 				if (this.axis.y.labels) {
 					const tickH = gr.CalcTextHeight(tickText[i], this.gFont);
@@ -253,6 +255,9 @@ function _chart({
 		this.paintGraph(gr);
 	};
 	
+	this.repaint = () => {
+		window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
+	}
 	/*
 		Helpers
 	*/
@@ -295,7 +300,7 @@ function _chart({
 			const [serie, idx] = this.tracePoint(x, y);
 			const bPaint = this.currPoint[0] !== serie || this.currPoint[1] !== idx;
 			this.currPoint = [serie, idx];
-			if (bPaint) {window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);}
+			if (bPaint) {this.repaint();}
 			if (this.currPoint[0] !== -1 && this.currPoint[1] !== -1) {
 				const point = this.dataDraw[serie][idx];
 				this.tooltip.SetValue(
@@ -313,7 +318,7 @@ function _chart({
 	this.leave = () => {
 		if (this.currPoint[0] !== -1 || this.currPoint[1] !== -1) {
 			this.currPoint = [-1, -1];
-			window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
+			this.repaint();
 			return true;
 		}
 		return false;
@@ -377,6 +382,7 @@ function _chart({
 	};
 	
 	this.manipulateData = () => {
+		if (!this.data) {return false;}
 		this.dataDraw = this.data.map((serie) => {return [...serie];})
 		this.cleanData();
 		this.filter();
@@ -403,9 +409,10 @@ function _chart({
 	/*
 		Config related
 	*/
-	this.changeConfig = ({data, colors, chroma, graph, dataManipulation, background, grid, axis, margin, x, y, w, h, title, gFont, bPaint = true}) => {
+	this.changeConfig = ({data, dataAsync = null, colors, chroma, graph, dataManipulation, background, grid, axis, margin, x, y, w, h, title, configuration, gFont, bPaint = true}) => {
 		if (gFont) {this.gFont = gFont;}
 		if (data) {this.data = data; this.dataDraw = data; this.series = data.length;}
+		if (dataAsync) {this.dataAsync = dataAsync;}
 		if (dataManipulation) {this.dataManipulation = {...this.dataManipulation, ...dataManipulation};}
 		if (graph) {this.graph = {...this.graph, ...graph};}
 		if (background) {this.background = {...this.background, ...background}; this.background.imageGDI = this.background.image ? gdi.Image(this.background.image) : null;}
@@ -426,8 +433,14 @@ function _chart({
 		if (w) {this.w = w;}
 		if (h) {this.h = h;}
 		if (title) {this.title = title;}
+		if (configuration) {
+			for (let key in configuration) {
+				this.configuration[key] = configuration[key];
+			}
+		}
 		if (data || dataManipulation) {this.initData();}
-		window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);
+		if (this.configuration.bLoadAsyncData && dataAsync) {this.initDataAsync();} // May be managed by the chart or externally
+		this.repaint();
 		return this;
 	};
 	
@@ -520,6 +533,17 @@ function _chart({
 		// Clean and manipulate data
 		this.manipulateData();
 		this.cleanPoints();
+		
+	}
+	
+	this.initDataAsync = () => {
+		if (!this.dataAsync) {return null;}
+		if (isFunction(this.dataAsync)) {this.dataAsync = this.dataAsync();}
+		return this.dataAsync.then((data) => {
+			this.changeConfig({data, dataAsync: null});
+			this.repaint();
+			return true;
+		});
 	}
 	
 	this.init = () => {
@@ -547,10 +571,11 @@ function _chart({
 	this.setDefaults();
 	this.gFont = _gdiFont('Segoe UI', _scale(10))
 	this.data = data;
-	this.dataDraw = data;
-	this.dataCoords = this.dataDraw.map((serie) => {return [];})
+	this.dataAsync = dataAsync;
+	this.dataDraw = data || [];
+	this.dataCoords = this.dataDraw.map((serie) => {return [];});
 	this.dataManipulation = {...this.dataManipulation, ...dataManipulation};
-	this.series = data.length;
+	this.series = data ? data.length : 0;
 	this.graph = {...this.graph, ...graph};
 	this.background = {...this.background, ...background};
 	this.colors = colors;
@@ -572,5 +597,7 @@ function _chart({
 	this.h = h;
 	this.title = typeof title !== 'undefined' ? title : window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
 	this.tooltipText = tooltipText;
+	this.configuration = {bLoadAsyncData: true, ...(configuration || {})};
 	this.init();
+	if (this.configuration.bLoadAsyncData && this.dataAsync) {this.initDataAsync();} // May be managed by the chart or externally
 }
