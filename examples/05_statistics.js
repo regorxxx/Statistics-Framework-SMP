@@ -1,5 +1,5 @@
 ﻿'use strict';
-//16/11/22
+//21/11/22
 
 include('..\\helpers\\statistics_xxx.js');
 include('..\\helpers\\statistics_xxx_menu.js');
@@ -50,7 +50,7 @@ const chart = new _chart({
 	dataAsync: () => getDataAsync('GENRE'),
 	dataManipulation: {sort: (a, b) => b.y - a.y, filter: null, slice: [0,15], distribution: null},
 	background: {color: RGB(200,200,200)},
-	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
+	margin: {left: _scale(40), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
 		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'Genre'}, 
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'Tracks'}
