@@ -1,14 +1,14 @@
 ﻿'use strict';
-//09/08/22
+//18/01/23
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
 try {include('menu_xxx.js');} catch(e) {
-	try {include('..\\examples\\_statistics\\menu_xxx.js');} catch(e) {fb.ShowPopupMessage('Missing menu framework file', window.Name);}
+	try {include('..\\..\\examples\\_statistics\\menu_xxx.js');} catch(e) {fb.ShowPopupMessage('Missing menu framework file', window.Name);}
 }
 
 function bindMenu(parent) {
-	return _attachedMenu.call(parent, {rMenu: createStatisticsMenu.bind(parent)});
+	return _attachedMenu.call(parent, {rMenu: createStatisticsMenu.bind(parent), popup: parent.pop});
 }
 
 // Generic statistics menu which should work on almost any chart...
@@ -42,6 +42,7 @@ function createStatisticsMenu(bClear = true) {
 	const sortInv = (a, b) => {return b.y - a.y;};
 	const sortNat = (a, b) => {return a.y - b.y;};
 	const filtGreat = (num) => {return (a) => {return a.y > num;}};
+	const filtLow = (num) => {return (a) => {return a.y < num;}};
 	// Header
 	menu.newEntry({entryText: this.title, flags: MF_GRAYED});
 	menu.newEntry({entryText: 'sep'});
@@ -52,7 +53,6 @@ function createStatisticsMenu(bClear = true) {
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'scatter',		entryText: 'Scatter'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'bars',			entryText: 'Bars'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'lines',			entryText: 'Lines'},
-			{entryText: 'sep'},
 		].forEach(createMenuOption('graph', 'type', subMenu));
 	}
 	{
@@ -94,16 +94,27 @@ function createStatisticsMenu(bClear = true) {
 		}
 		{
 			const subMenu = menu.newMenu('Filter...');
+			const subMenuGreat = menu.newMenu('Greater than...', subMenu);
+			const subMenuLow = menu.newMenu('Lower than...', subMenu);
 			// Create a filter entry for each fraction of the max value (duplicates filtered)
 			const parent = this;
 			const options = [...new Set([this.stats.maxY, 1000, 100, 10, 10/2, 10/3, 10/5, 10/7].map((frac) => {
 				return Math.round(this.stats.maxY / frac) || 1; // Don't allow zero
 			}))];
 			options.map((val) => {
-				return {isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtGreat(val), entryText: 'Greater than ' + val};
+				return {isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtGreat(val), entryText: val};
 			}).forEach(function (option, i){
-				createMenuOption('dataManipulation', 'filter', subMenu, false)(option);
-				menu.newCheckMenu(subMenu, option.entryText, void(0), () => {
+				createMenuOption('dataManipulation', 'filter', subMenuGreat, false)(option);
+				menu.newCheckMenu(subMenuGreat, option.entryText, void(0), () => {
+					const filter = this.dataManipulation.filter;
+					return filter && filter({y: options[i] + 1}) && !filter({y: options[i]}); // Just a hack to check the current value is the filter
+				});
+			}.bind(parent));
+			options.map((val) => {
+				return {isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtLow(val), entryText: val};
+			}).forEach(function (option, i){
+				createMenuOption('dataManipulation', 'filter', subMenuLow, false)(option);
+				menu.newCheckMenu(subMenuLow, option.entryText, void(0), () => {
 					const filter = this.dataManipulation.filter;
 					return filter && filter({y: options[i] + 1}) && !filter({y: options[i]}); // Just a hack to check the current value is the filter
 				});
@@ -148,9 +159,10 @@ function createStatisticsMenu(bClear = true) {
 				return {isEq: null,	key: this.graph.borderWidth, value: null, newValue: _scale(val), entryText: val.toString()};
 			}).forEach(createMenuOption('graph', 'borderWidth', configSubMenu));
 		}
-		if (this.graph.type.toLowerCase() === 'scatter') {
+		const type = this.graph.type.toLowerCase();
+		if (type === 'scatter' || type === 'p-p plot') {
 			const configSubMenu = menu.newMenu('Point type...', subMenu);
-			['circle', 'crux'].map((val) => {
+			['circle', 'circumference', 'cross', 'triangle', 'plus'].map((val) => {
 				return {isEq: null, key: this.graph.point, value: null, newValue: val, entryText: val};
 			}).forEach(createMenuOption('graph', 'point', configSubMenu));
 		}

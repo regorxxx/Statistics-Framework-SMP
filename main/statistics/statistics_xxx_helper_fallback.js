@@ -1,5 +1,5 @@
 ﻿'use strict';
-//19/06/22
+//08/03/23
 
 /* 
 	helpers_xxx_UI.js 
@@ -148,9 +148,65 @@ function invert(color, bBW = false) {
 }
 
 /* 
-	// helpers_xxx_prototypes.js
+	helpers_xxx_UI_flip.js
 */
-const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+
+String.prototype.flip = function() {
+	const last = this.length - 1;
+	let result = new Array(this.length)
+	for (let i = last; i >= 0; --i) {
+		let c = this.charAt(i);
+		let r = flipTable[c];
+		result[last - i] = r !== void(0) ? r : c;
+	}
+	return result.join('');
+}
+
+const flipTable = {
+	a : '\u0250',
+	b : 'q',
+	c : '\u0254', 
+	d : 'p',
+	e : '\u01DD',
+	f : '\u025F', 
+	g : '\u0183',
+	h : '\u0265',
+	i : '\u0131', 
+	j : '\u027E',
+	k : '\u029E',
+	//l : '\u0283',
+	m : '\u026F',
+	n : 'u',
+	r : '\u0279',
+	t : '\u0287',
+	v : '\u028C',
+	w : '\u028D',
+	y : '\u028E',
+	'.' : '\u02D9',
+	'[' : ']',
+	'(' : ')',
+	'{' : '}',
+	'?' : '\u00BF',
+	'!' : '\u00A1',
+	"\'" : ',',
+	'<' : '>',
+	'_' : '\u203E',
+	';' : '\u061B',
+	'\u203F' : '\u2040',
+	'\u2045' : '\u2046',
+	'\u2234' : '\u2235',
+	'\r' : '\n' 
+}
+for (let i in flipTable) {flipTable[flipTable[i]] = i}
+
+/* 
+	helpers_xxx_prototypes.js
+*/
+const range = (start, stop, step) => new Array((stop - start) / step + 1).fill(void(0)).map((_, i) => start + (i * step));
+
+function _p(value) {
+	return '(' + value + ')';
+}
 
 function _b(value) {
 	return '[' + value + ']';
@@ -164,13 +220,66 @@ function _bt(tag) {
 	return _b(_t(tag));
 }
 
+function round(floatnum, decimals, eps = 10**-14){
+	let result;
+	if (decimals > 0) {
+		if (decimals === 15) {result = floatnum;}
+		else {result = Math.round(floatnum * Math.pow(10, decimals) + eps) / Math.pow(10, decimals);}
+	} else {result =  Math.round(floatnum);}
+	return result;
+}
+
 /* 
- helpers_xxx_basic_js.js
- */
+	helpers_xxx_basic_js.js
+*/
 let module = {}, exports = {};
 module.exports = null;
 
 function require(script) {
 	include(newScript + '.js') ;
 	return module.exports;
+}
+
+/* 
+	helpers_xxx_prototypes_smp.js
+*/
+FbTitleFormat.prototype.EvalWithMetadbsAsync = function EvalWithMetadbsAsync(handleList, slice = 1000) {
+	const size = handleList.Count;
+	return new Promise(async (resolve) => {
+		const items = handleList.Convert();
+		const count = items.length;
+		const total = Math.ceil(size / slice);
+		const tags = [];
+		let prevProgress = -1;
+		for (let i = 1; i <= total; i++) {
+			await new Promise((resolve) => {
+				setTimeout(() => {
+					const iItems = new FbMetadbHandleList(items.slice((i - 1) * slice, i === total ? count : i * slice));
+					tags.push(...this.EvalWithMetadbs(iItems));
+					const progress = Math.round(i / total * 100);
+					if (progress % 25 === 0 && progress > prevProgress) {prevProgress = progress; console.log('EvalWithMetadbsAsync ' + _p(this.Expression) + ' ' + progress + '%.');}
+					resolve('done');
+				}, 25);
+			});
+		}
+		resolve(tags);
+	});
+}
+
+{	// Augment fb.TitleFormat
+	const old = fb.TitleFormat;
+	fb.TitleFormat = function TitleFormat() {
+		const that = old.apply(fb, [...arguments]);
+		that.Expression = arguments[0];
+		return that;
+	}
+}
+
+{	// Augment FbTitleFormat
+	const old = FbTitleFormat;
+	FbTitleFormat = function FbTitleFormat() {
+		const that = old(...arguments);
+		that.Expression = arguments[0];
+		return that;
+	}
 }
