@@ -1,9 +1,9 @@
 ﻿'use strict';
-//18/01/23
+//22/08/23
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
-try {include('menu_xxx.js');} catch(e) {
+try {include('..\\..\\helpers\\menu_xxx.js');} catch(e) {
 	try {include('..\\..\\examples\\_statistics\\menu_xxx.js');} catch(e) {fb.ShowPopupMessage('Missing menu framework file', window.Name);}
 }
 
@@ -31,9 +31,9 @@ function createStatisticsMenu(bClear = true) {
 				if (bCheck) {
 					menu.newCheckMenu(menuName, option.entryText, void(0), () => {
 						const val = subKey ? this[key][subKey] : this[key];
-						if (option.newValue && typeof option.newValue === 'function') {return val && val.name === option.newValue.name;}
-						if (option.newValue && typeof option.newValue === 'object') {return val && val.toString() === option.newValue.toString();}
-						else {return val === option.newValue;}
+						if (option.newValue && typeof option.newValue === 'function') {return !!(val && val.name === option.newValue.name);}
+						if (option.newValue && typeof option.newValue === 'object') {return !!(val && val.toString() === option.newValue.toString());}
+						else {return (val === option.newValue);}
 					});
 				}
 			}
@@ -107,7 +107,7 @@ function createStatisticsMenu(bClear = true) {
 				createMenuOption('dataManipulation', 'filter', subMenuGreat, false)(option);
 				menu.newCheckMenu(subMenuGreat, option.entryText, void(0), () => {
 					const filter = this.dataManipulation.filter;
-					return filter && filter({y: options[i] + 1}) && !filter({y: options[i]}); // Just a hack to check the current value is the filter
+					return !!(filter && filter({y: options[i] + 1}) && !filter({y: options[i]})); // Just a hack to check the current value is the filter
 				});
 			}.bind(parent));
 			options.map((val) => {
@@ -116,7 +116,7 @@ function createStatisticsMenu(bClear = true) {
 				createMenuOption('dataManipulation', 'filter', subMenuLow, false)(option);
 				menu.newCheckMenu(subMenuLow, option.entryText, void(0), () => {
 					const filter = this.dataManipulation.filter;
-					return filter && filter({y: options[i] + 1}) && !filter({y: options[i]}); // Just a hack to check the current value is the filter
+					return !!(filter && filter({y: options[i] + 1}) && !filter({y: options[i]})); // Just a hack to check the current value is the filter
 				});
 			}.bind(parent));
 			[

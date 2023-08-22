@@ -1,8 +1,8 @@
 ﻿'use strict';
-//21/06/22
+//21/08/23
 
-include('..\\helpers\\statistics_xxx.js');
-include('..\\helpers\\statistics_xxx_menu.js')
+include('..\\main\\statistics\\statistics_xxx.js');
+include('..\\main\\statistics\\statistics_xxx_menu.js');
 
 window.DefinePanel('Statistics example 2', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
