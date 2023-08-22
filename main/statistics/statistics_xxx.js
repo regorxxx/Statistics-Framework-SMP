@@ -1,5 +1,5 @@
 ﻿'use strict';
-//18/01/23
+//22/08/23
 
 include('statistics_xxx_helper.js');
 include('..\\..\\helpers\\popup_xxx.js');
@@ -21,6 +21,7 @@ function _chart({
 				w = window.Width,
 				h = window.Height,
 				title,
+				gFont = _gdiFont('Segoe UI', _scale(10)),
 				tooltipText = '',
 				configuration = {/* bLoadAsyncData: true */}
 		} = {}) {
@@ -157,6 +158,49 @@ function _chart({
 		});
 	};
 	
+	this.paintPie = (gr, serie, i, x, y, w, h, maxY, r) => {
+		// Antialias for lines use gr.SetSmoothingMode(4) before calling
+		// Values
+		let valH;
+		let circleArr = [];
+		const labelCoord = [];
+		const c = {x: (w - x) / 2, y: y / 2};
+		const ticks = r * 2 * Math.PI;
+		let iY, iX;
+		for (let j = 0; j < ticks; j++) {
+			iY = r * Math.sin(2 * Math.PI / ticks * j)
+			iX = r * Math.cos(2 * Math.PI / ticks * j)
+			circleArr.push(c.x + iX, c.y + iY);
+		}
+		gr.FillPolygon(invert(this.background.color, true), 0, circleArr);
+		let alpha = 0;
+		serie.forEach((value, j, thisSerie) => {
+			const borderColor = RGBA(...toRGB(invert(this.colors[i][j], true)), getBrightness(...toRGB(this.colors[i][j])) < 50 ? 300 : 25);
+			const bFocused = this.currPoint[0] === i && this.currPoint[1] === j;
+			circleArr = [...Object.values(c)];
+			const sumY = thisSerie.reduce((acc, val) => acc + val.y, 0);
+			const perc = value.y / sumY;
+			const sliceTicks = perc * ticks;
+			const iAlpha = 2 * Math.PI * perc;
+			for (let h = 0; h < sliceTicks; h++) {
+				iY = r * Math.sin(alpha + iAlpha / sliceTicks * h)
+				iX = r * Math.cos(alpha + iAlpha / sliceTicks * h)
+				circleArr.push(c.x + iX, c.y + iY);
+			}
+			gr.FillPolygon(this.colors[i][j], 0, circleArr);
+			if (bFocused) {gr.FillPolygon(borderColor, 0, circleArr);}
+			// Borders
+			if (this.graph.borderWidth) {
+				gr.DrawPolygon(borderColor, this.graph.borderWidth, circleArr);
+			}
+			circleArr.push(... Object.values(c));
+			alpha += iAlpha;
+			this.dataCoords[i][j] = {c: {...c}, r1: 0, r2: r, alpha1: alpha - iAlpha, alpha2: alpha};
+			labelCoord.push({from: {...c}, to: {x: c.x + iX, y: c.y + iY}, val: perc * 100, alpha});
+		});
+		return labelCoord;
+	};
+	
 	this.paintGraph = (gr) => {
 		this.dataCoords = this.dataDraw.map((serie) => {return [];});
 		let x, y, w, h, xOffsetKey, yOffsetKey;
@@ -179,7 +223,7 @@ function _chart({
 		this.dataDraw.forEach((serie) => {
 			serie.forEach((value) => {xAsisValues.add(value.x);});
 		});
-		
+		const labelOver = {coord: []}; // For pie Graphs
 		/*
 			Draw for all graphs
 		*/
@@ -189,34 +233,49 @@ function _chart({
 		y = this.h - this.margin.bottom;
 		xOffsetKey = 0;
 		yOffsetKey = 0;
-		// XY Titles
-		if (this.axis.x.show && this.axis.x.key.length && this.axis.x.showKey) {
-			yOffsetKey = gr.CalcTextHeight(this.axis.x.key, this.gFont) + _scale(2);
-			y -= yOffsetKey;
-		}
-		if (this.axis.y.show && this.axis.y.key.length && this.axis.y.showKey) {
-			xOffsetKey = gr.CalcTextHeight(this.axis.y.key, this.gFont) + _scale(2);
-			x += xOffsetKey;
-			w -= xOffsetKey;
-		}
-		// Ticks
-		if (this.axis.y.show && this.axis.y.labels) {
-			tickText.forEach((tick) => {
-				const yTickW = gr.CalcTextWidth(tick, this.gFont) + this.axis.y.width / 2 + _scale(4);
-				if (this.margin.leftAuto <= yTickW) {this.margin.leftAuto += this.margin.left; x += this.margin.left;}
-			});
-		}
-		// XY Axis
-		if (this.axis.x.show) {
-			gr.DrawLine(x, y - this.axis.x.width / 2, x + w - this.margin.leftAuto, y - this.axis.x.width / 2, this.axis.x.width, this.axis.x.color);
-		}
-		if (this.axis.y.show) {
-			gr.DrawLine(x, y, x, h, this.axis.y.width, this.axis.y.color);
+		switch (this.graph.type) {
+			case 'doughnut':
+			case 'pie': 
+				// XY Titles
+				if (this.axis.x.show && this.axis.x.key.length && this.axis.x.showKey) {
+					yOffsetKey = gr.CalcTextHeight(this.axis.x.key, this.gFont) + _scale(2);
+					y -= yOffsetKey;
+				}
+				if (this.axis.y.show && this.axis.y.key.length && this.axis.y.showKey) {
+					xOffsetKey = gr.CalcTextHeight(this.axis.y.key, this.gFont) + _scale(2);
+					x += xOffsetKey;
+					w -= xOffsetKey;
+				}
+				break;
+			default:
+				// XY Titles
+				if (this.axis.x.show && this.axis.x.key.length && this.axis.x.showKey) {
+					yOffsetKey = gr.CalcTextHeight(this.axis.x.key, this.gFont) + _scale(2);
+					y -= yOffsetKey;
+				}
+				if (this.axis.y.show && this.axis.y.key.length && this.axis.y.showKey) {
+					xOffsetKey = gr.CalcTextHeight(this.axis.y.key, this.gFont) + _scale(2);
+					x += xOffsetKey;
+					w -= xOffsetKey;
+				}
+				// Ticks
+				if (this.axis.y.show && this.axis.y.labels) {
+					tickText.forEach((tick) => {
+						const yTickW = gr.CalcTextWidth(tick, this.gFont) + this.axis.y.width / 2 + _scale(4);
+						if (this.margin.leftAuto <= yTickW) {this.margin.leftAuto += this.margin.left; x += this.margin.left;}
+					});
+				}
+				// XY Axis
+				if (this.axis.x.show) {
+					gr.DrawLine(x, y - this.axis.x.width / 2, x + w - this.margin.leftAuto, y - this.axis.x.width / 2, this.axis.x.width, this.axis.x.color);
+				}
+				if (this.axis.y.show) {
+					gr.DrawLine(x, y, x, h, this.axis.y.width, this.axis.y.color);
+				}
 		}
 		x += this.axis.x.width / 2;
 		w -= this.axis.y.width / 2;
 		y -= this.axis.y.width;
-		
 		let tickW, barW, offsetTickText = 0;
 		switch (this.graph.type) {
 			case 'lines': {
@@ -267,6 +326,21 @@ function _chart({
 				break;
 			}
 			case 'pie': {
+				x -= this.axis.x.width * 1/2;
+				tickW = Math.min((w - this.margin.leftAuto) / 2, (y - h - this.margin.top - this.margin.bottom) / 2);
+				barW = 0;
+				offsetTickText = - tickW/ 2;
+				// Values
+				gr.SetSmoothingMode(4); // Antialias for lines
+				const series = this.dataDraw.length;
+				this.dataDraw.forEach((serie, i) => {
+					const r = tickW * (series - i) / series;
+					const serieCoord = this.paintPie(gr, serie, i, x, y, w, h, maxY, r);
+					labelOver.coord.push([{from: {x: (w - x) / 2, y: y / 2}, to: {x: (w - x) / 2 + r, y: y / 2}, val: void(0), alpha: 0}, ...serieCoord]);
+					this.dataCoords[i].forEach((point) => {point.r1 = (series - i - 1) / series * r;});
+				});
+				labelOver.r = tickW;
+				gr.SetSmoothingMode(0);
 				break;
 			}
 			case 'doughnut': {
@@ -286,71 +360,141 @@ function _chart({
 		/*
 			Draw for all graphs
 		*/
-		// Y Axis ticks
-		if (this.axis.y.show) {
-			ticks.forEach((tick, i) => {
-				const yTick = y - tick / maxY * (y - h) || y;
-				gr.DrawLine(x - this.axis.x.width * 2, yTick, x + this.axis.x.width, yTick, this.axis.y.width / 2, this.axis.y.color);
-				if (this.axis.y.labels) {
-					const tickH = gr.CalcTextHeight(tickText[i], this.gFont);
-					const yTickText = yTick - tickH / 2;
-					const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-					gr.GdiDrawText(tickText[i], this.gFont, this.axis.y.color, this.x - this.axis.y.width / 2 - _scale(4) + xOffsetKey, yTickText, this.margin.leftAuto, tickH, flags);
-				}
-			});
-			if (this.axis.y.key.length && this.axis.y.showKey) {
-				const key = this.axis.y.key.flip(); // Easy way to vertically show a string from bottom to top
-				const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
-				const keyW = gr.CalcTextWidth(key, this.gFont);
-				gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-				gr.DrawString(key, this.gFont, this.axis.y.color, x - yOffsetKey - maxTickW - _scale(4), this.y + (this.h - this.y) / 2 - keyW/2, w, this.h, StringFormatFlags.DirectionVertical);
-				gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
-			}
-		}
-		// X Axis ticks
-		if (this.axis.x.show) {
-			if (w / tickW < 30) { // Don't paint labels when they can't be fitted properly
-				const last = xAsisValues.size - 1;
-				[...xAsisValues].forEach((valueX,  i) => {
-					const xLabel= x + i * tickW;
-					if (this.axis.x.labels) {
-						if (i === 0 && offsetTickText) { // Fix for first label position
-							const xTickW = gr.CalcTextWidth(valueX, this.gFont);
-							const flags = DT_LEFT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-							const zeroW = xLabel + offsetTickText + tickW - this.x - this.margin.leftAuto / 2;
-							gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, this.x + this.margin.leftAuto / 2 + xOffsetKey, y + this.axis.y.width, zeroW, this.h, flags);
-						} else if (i === last) { // Fix for last label position
-							const lastW = xLabel + offsetTickText + tickW > w - this.margin.right ? this.x + w - (xLabel + offsetTickText) + this.margin.right : tickW;
-							const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-							gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, xLabel + offsetTickText + xOffsetKey, y + this.axis.y.width, lastW - xOffsetKey, this.h, flags);
-						} else {
-							const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-							gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, xLabel + offsetTickText, y + this.axis.y.width, tickW, this.h, flags);
-						}
+		switch (this.graph.type) {
+			case 'doughnut':
+			case 'pie':
+				// Y Axis ticks
+				if (this.axis.y.show || this.axis.x.show) {
+					if (this.axis.y.labels || this.axis.x.labels) {
+						const series = this.dataDraw.length;
+						this.dataDraw.forEach((serie, i) => {
+							const labels = labelOver.coord[i];
+							let prevLabel = labels[0];
+							labels.slice(1).forEach((label, j) => {
+								const tetha = (label.alpha - prevLabel.alpha) / 2 + prevLabel.alpha;
+								if (this.axis.y.labels) { // Value labels
+									const labelText = round(label.val, 0) + '%';
+									const tickH = gr.CalcTextHeight(labelText, this.gFont);
+									const tickW = gr.CalcTextWidth(labelText, this.gFont);
+									// const minX = Math.min(label.to.x, label.from.x, prevLabel.to.x, prevLabel.from.x);
+									// const maxX = Math.max(label.to.x, label.from.x, prevLabel.to.x, prevLabel.from.x);
+									// const minY = Math.min(label.to.y, label.from.y, prevLabel.to.y, prevLabel.from.y);
+									// const maxY = Math.max(label.to.y, label.from.y, prevLabel.to.y, prevLabel.from.y);
+									// const yTickText = (label.to.y + prevLabel.to.y + prevLabel.from.y) / 3 - tickH / 2 + (series > 1 ? (series - i) / series**2 * labelOver.r * Math.sin((label.alpha + prevLabel.alpha) / 2) : 0);
+									// const xTickText = (label.to.x + prevLabel.to.x + prevLabel.from.x) / 3 - tickW / 2 + (series > 1 ? (series - i) / series**2 * labelOver.r * Math.cos((label.alpha + prevLabel.alpha) / 2) : 0);
+									// const centroid = 2 * Math.sin((label.alpha - prevLabel.alpha) / 2) / (3 * (label.alpha - prevLabel.alpha) / 2) * labelOver.r * (series - i) / series;
+									// const centroid = 2 * Math.sin((label.alpha - prevLabel.alpha) / 2) / (3 * (label.alpha - prevLabel.alpha) / 2) * labelOver.r * (series === 0 ? 1 : ((series - i)**3 - (i === (series - 1) ? 0 : (series - i + 1))**3) / ((series - i)**2 - (i === series - 1 ? 0 : (series - i + 1)**2)) / series);
+									// const yTickText = label.from.y + centroid * Math.sin((label.alpha - prevLabel.alpha) / 2 + prevLabel.alpha) - tickH / 2 + (series > 1 ? (series - i) / series * labelOver.r / 2 * Math.sin((label.alpha + prevLabel.alpha) / 2) : 0);
+									// const xTickText = label.from.x + centroid * Math.cos((label.alpha - prevLabel.alpha) / 2 + prevLabel.alpha) - tickW / 2 + (series > 1 ? (series - i) / series * labelOver.r / 2 * Math.cos((label.alpha + prevLabel.alpha) / 2) : 0);
+									const centroid = labelOver.r / series * ((series - (i + 1))/2 + (series - i)/2);
+									const yTickText = label.from.y + centroid * Math.sin(tetha) - tickH / 2;
+									const xTickText = label.from.x + centroid * Math.cos(tetha) - tickW / 2;
+									const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+									gr.GdiDrawText(labelText, this.gFont, this.axis.y.color, xTickText, yTickText, tickW, tickH, flags);
+								}
+								if (this.axis.x.labels) { // keys
+									const labelText = [...xAsisValues][j];
+									const tickH = gr.CalcTextHeight(labelText, this.gFont);
+									const tickW = gr.CalcTextWidth(labelText, this.gFont);
+									const border = labelOver.r / series * (series - i);
+									const yTickText = label.from.y + (border + tickH /2) * Math.sin(tetha) - tickH / 2;
+									const xTickText = label.from.x + (border + tickW) * Math.cos(tetha) - tickW / 2;
+									const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+									const borderColor = RGBA(...toRGB(invert(this.colors[i][j], true)), 150);
+									gr.FillSolidRect(xTickText - _scale(2), yTickText, tickW + _scale(4), tickH, borderColor);
+									gr.GdiDrawText(labelText, this.gFont, this.colors[i][j], xTickText, yTickText, tickW, this.h, flags);
+								}
+								prevLabel = label;
+							});
+						});
 					}
-					const xLine = xLabel + barW;
-					gr.DrawLine(xLine, y + this.axis.x.width * 2, xLine, y - this.axis.x.width, this.axis.x.width / 2, this.axis.x.color);
-				});
-			}
-			if (this.axis.x.key.length && this.axis.x.showKey) {
-				const offsetH = this.axis.x.labels ? gr.CalcTextHeight('A', this.gFont) : 0;
-				gr.GdiDrawText(this.axis.x.key, this.gFont, this.axis.x.color, x, y + this.axis.x.width + offsetH, w, this.h, DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX);
-			}
-		}
-		// Grid
-		if (this.grid.y.show) {
-			ticks.forEach((tick, i) => {
-				const yTick = y - tick / maxY * (y - h);
-				const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-				gr.DrawLine(x, yTick, w, yTick, this.grid.y.width, this.grid.y.color);
-			});
-		}
-		if (this.grid.x.show) {
-			[...xAsisValues].forEach((tick, i) => {
-				const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
-				const xLine = x + barW + i * tickW;
-				gr.DrawLine(xLine, y - this.grid.y.width, xLine, h, this.grid.x.width, this.grid.x.color);
-			});
+					if (this.axis.y.key.length && this.axis.y.showKey) {
+						const key = this.axis.y.key.flip(); // Easy way to vertically show a string from bottom to top
+						const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
+						const keyW = gr.CalcTextWidth(key, this.gFont);
+						const keyH = gr.CalcTextHeight(key, this.gFont);
+						gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+						gr.DrawString(key, this.gFont, this.axis.y.color, labelOver.coord[0][0].from.x - labelOver.r - keyH * 2 , this.y + (this.h - this.y) / 2 - keyW*2/3, w, this.h, StringFormatFlags.DirectionVertical);
+						gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+					}
+				}
+				// X Axis ticks
+				if (this.axis.x.show) {
+					if (this.axis.x.key.length && this.axis.x.showKey) {
+						// const offsetH = this.axis.x.labels ? gr.CalcTextHeight('A', this.gFont) : 0;
+						const offsetH = 0;
+						const keyW = gr.CalcTextWidth(this.axis.x.key, this.gFont);
+						gr.GdiDrawText(this.axis.x.key, this.gFont, this.axis.x.color, labelOver.coord[0][0].from.x - keyW/2, y + this.axis.x.width + offsetH, keyW, this.h, DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX);
+					}
+				}
+				break;
+			default:
+				// Y Axis ticks
+				if (this.axis.y.show) {
+					ticks.forEach((tick, i) => {
+						const yTick = y - tick / maxY * (y - h) || y;
+						gr.DrawLine(x - this.axis.x.width * 2, yTick, x + this.axis.x.width, yTick, this.axis.y.width / 2, this.axis.y.color);
+						if (this.axis.y.labels) {
+							const tickH = gr.CalcTextHeight(tickText[i], this.gFont);
+							const yTickText = yTick - tickH / 2;
+							const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+							gr.GdiDrawText(tickText[i], this.gFont, this.axis.y.color, this.x - this.axis.y.width / 2 - _scale(4) + xOffsetKey, yTickText, this.margin.leftAuto, tickH, flags);
+						}
+					});
+					if (this.axis.y.key.length && this.axis.y.showKey) {
+						const key = this.axis.y.key.flip(); // Easy way to vertically show a string from bottom to top
+						const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
+						const keyW = gr.CalcTextWidth(key, this.gFont);
+						gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+						gr.DrawString(key, this.gFont, this.axis.y.color, x - yOffsetKey - maxTickW - _scale(4), this.y + (this.h - this.y) / 2 - keyW/2, w, this.h, StringFormatFlags.DirectionVertical);
+						gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+					}
+				}
+				// X Axis ticks
+				if (this.axis.x.show) {
+					if (w / tickW < 30) { // Don't paint labels when they can't be fitted properly
+						const last = xAsisValues.size - 1;
+						[...xAsisValues].forEach((valueX,  i) => {
+							const xLabel= x + i * tickW;
+							if (this.axis.x.labels) {
+								if (i === 0 && offsetTickText) { // Fix for first label position
+									const xTickW = gr.CalcTextWidth(valueX, this.gFont);
+									const flags = DT_LEFT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+									const zeroW = xLabel + offsetTickText + tickW - this.x - this.margin.leftAuto / 2;
+									gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, this.x + this.margin.leftAuto / 2 + xOffsetKey, y + this.axis.y.width, zeroW, this.h, flags);
+								} else if (i === last) { // Fix for last label position
+									const lastW = xLabel + offsetTickText + tickW > w - this.margin.right ? this.x + w - (xLabel + offsetTickText) + this.margin.right : tickW;
+									const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+									gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, xLabel + offsetTickText + xOffsetKey, y + this.axis.y.width, lastW - xOffsetKey, this.h, flags);
+								} else {
+									const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+									gr.GdiDrawText(valueX, this.gFont, this.axis.x.color, xLabel + offsetTickText, y + this.axis.y.width, tickW, this.h, flags);
+								}
+							}
+							const xLine = xLabel + barW;
+							gr.DrawLine(xLine, y + this.axis.x.width * 2, xLine, y - this.axis.x.width, this.axis.x.width / 2, this.axis.x.color);
+						});
+					}
+					if (this.axis.x.key.length && this.axis.x.showKey) {
+						const offsetH = this.axis.x.labels ? gr.CalcTextHeight('A', this.gFont) : 0;
+						gr.GdiDrawText(this.axis.x.key, this.gFont, this.axis.x.color, x, y + this.axis.x.width + offsetH, w, this.h, DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX);
+					}
+				}
+				// Grid
+				if (this.grid.y.show) {
+					ticks.forEach((tick, i) => {
+						const yTick = y - tick / maxY * (y - h);
+						const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+						gr.DrawLine(x, yTick, w, yTick, this.grid.y.width, this.grid.y.color);
+					});
+				}
+				if (this.grid.x.show) {
+					[...xAsisValues].forEach((tick, i) => {
+						const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
+						const xLine = x + barW + i * tickW;
+						gr.DrawLine(xLine, y - this.grid.y.width, xLine, h, this.grid.x.width, this.grid.x.color);
+					});
+				}
 		}
 	};
 	
@@ -404,15 +548,40 @@ function _chart({
 		Callbacks
 	*/
 	this.tracePoint = (x, y) => {
-		for (let i = 0;  i < this.series; i++) {
-			const serie = this.dataCoords[i];
-			const len = serie.length;
-			for (let j = 0; j < len; j++) {
-				const point = serie[j];
-				if (x >= point.x && x <= point.x + point.w && y >= point.y && y <= point.y + point.h) {
-					return [i, j];
+		switch (this.graph.type) {
+			case 'doughnut':
+			case 'pie':
+				for (let i = 0;  i < this.series; i++) {
+					const serie = this.dataCoords[i];
+					const len = serie.length;
+					for (let j = 0; j < len; j++) {
+						const point = serie[j];
+						// this.dataCoords[i][j] = {c: {...c}, r1: 0, r2: r, alpha1: alpha - iAlpha, alpha2: alpha};
+						const xc = x - point.c.x;
+						const yc = y - point.c.y;
+						const r = (xc**2 + yc**2)**(1/2);
+						const phi = xc >= 0 
+							? yc >= 0
+								? Math.asin(yc/r)
+								: Math.asin(yc/r) + 2 * Math.PI
+							: -Math.asin(yc/r) + Math.PI;
+						if (phi >= point.alpha1 && phi <= point.alpha2 && r >= point.r1 && r <= point.r2) {
+							return [i, j];
+						}
+					}
 				}
-			}
+				break;
+			default:
+				for (let i = 0;  i < this.series; i++) {
+					const serie = this.dataCoords[i];
+					const len = serie.length;
+					for (let j = 0; j < len; j++) {
+						const point = serie[j];
+						if (x >= point.x && x <= point.x + point.w && y >= point.y && y <= point.y + point.h) {
+							return [i, j];
+						}
+					}
+				}
 		}
 		return [-1, -1];
 	};
@@ -710,37 +879,82 @@ function _chart({
 	this.checkColors = (bForce = false) => { // Fill holes and add missing colors at end
 		if (!this.colors || bForce) {this.colors = [];}
 		const series = Math.max(this.series, this.dataDraw.length);
-		if (this.colors.filter(Boolean).length !== series) {
-			// Random colors or using Chroma scale with specific schems or array of colors
-			let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
-			let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
-			if (bRandom) {
-				this.colors.forEach((color, i) => {
-					if (!color) {this.colors[i] = this.randomColor();}
-				});
-				for (let i = this.colors.length; i < series; i++) {
-					this.colors.push(this.randomColor());
+		if (this.graph.type === 'pie') {
+			if (this.colors.filter(Boolean).length !== series) {
+				for (let i = 0; i < series; i++) {
+					if (!this.colors[i]) {this.colors[i] = [];}
 				}
-			} else { // Chroma scale method
-				let scheme;
-				// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
-				if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
-					const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
-					scheme = arr[Math.floor(Math.random() * arr.length)];
-				} else { // An array of colors or colorbrewer palette (string)
-					scheme = this.chroma.scheme;
-				}
-				const scale = this.chromaColor(scheme, series);
-				let j = 0;
-				this.colors.forEach((color, i) => {
-					if (!color) {
-						this.colors[i] = scale[j]; 
-						j++;
+			}
+			if (this.colors.some((arrCol, i) => arrCol.filter(Boolean).length !== this.dataDraw[i].length)) {
+				this.colors.forEach((arrCol, i) => {
+					const serieLen = this.dataDraw[i].length;
+					// Random colors or using Chroma scale with specific scheme or array of colors
+					let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
+					let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
+					if (bRandom) {
+						arrCol.forEach((color, j) => {
+							if (!color) {arrCol[j] = this.randomColor();}
+						});
+						for (let j = arrCol.length; j < serieLen; j++) {
+							arrCol.push(this.randomColor());
+						}
+					} else { // Chroma scale method
+						let scheme;
+						// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
+						if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
+							const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
+							scheme = arr[Math.floor(Math.random() * arr.length)];
+						} else { // An array of colors or colorbrewer palette (string)
+							scheme = this.chroma.scheme;
+						}
+						const scale = this.chromaColor(scheme, serieLen);
+						let k = 0;
+						arrCol.forEach((color, j) => {
+							if (!color) {
+								arrCol[j] = scale[k]; 
+								k++;
+							}
+						});
+						for (let j = arrCol.length; j < serieLen; j++) {
+							arrCol.push(scale[k]);
+							k++;
+						}
 					}
 				});
-				for (let i = this.colors.length; i < series; i++) {
-					this.colors.push(scale[j]);
-					j++;
+			}
+		} else {
+			if (this.colors.filter(Boolean).length !== series) {
+				// Random colors or using Chroma scale with specific schems or array of colors
+				let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
+				let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
+				if (bRandom) {
+					this.colors.forEach((color, i) => {
+						if (!color) {this.colors[i] = this.randomColor();}
+					});
+					for (let i = this.colors.length; i < series; i++) {
+						this.colors.push(this.randomColor());
+					}
+				} else { // Chroma scale method
+					let scheme;
+					// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
+					if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
+						const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
+						scheme = arr[Math.floor(Math.random() * arr.length)];
+					} else { // An array of colors or colorbrewer palette (string)
+						scheme = this.chroma.scheme;
+					}
+					const scale = this.chromaColor(scheme, series);
+					let j = 0;
+					this.colors.forEach((color, i) => {
+						if (!color) {
+							this.colors[i] = scale[j]; 
+							j++;
+						}
+					});
+					for (let i = this.colors.length; i < series; i++) {
+						this.colors.push(scale[j]);
+						j++;
+					}
 				}
 			}
 		}
@@ -841,7 +1055,7 @@ function _chart({
 	}
 	
 	this.setDefaults();
-	this.gFont = _gdiFont('Segoe UI', _scale(10))
+	this.gFont = gFont;
 	this.data = data;
 	this.dataAsync = dataAsync;
 	this.dataDraw = data || [];
