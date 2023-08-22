@@ -7,12 +7,14 @@
 
 ## [Unreleased][]
 ### Added
+- 'pie' graph type. Colors are set per data point, not only per serie. i.e. A serie with 4 values, requires at least 4 colors. Not setting one will fallback to a random Chroma Palette (per serie). In case of using multiple series to showcase the same categories, it's recommended to set a specific Chroma scheme, so all series use the same palette.
 - 'dataAsync' variable to pass function returning a promise or a promise, resolving to data, to initialize a graph while calculating data without blocking the panel. Once the promise is resolved the chart is repaint with the data.
-- 'configuration' variable to pass some chart exotic configs. Currently allows 'bLoadAsyncData' key, which is set to true by default. i.e. when passing async data, it will be refreshed once available. Setting it to false will not try to repaint the chart with the data automatically.
-- '05_statistics' example file to showcase the Async data feature.
-- Animation while loading Async data.
+- 'configuration' variable to pass some chart exotic configurations. Currently allows 'bLoadAsyncData' key, which is set to true by default. i.e. when passing asynchronous data, it will be refreshed once available. Setting it to false will not try to repaint the chart with the data automatically.
+- '05_statistics' example file to showcase the asynchronous data feature.
+- Animation while loading asynchronous data.
 ### Changed
 - Minor performance improvement (usually on subsequent calls) caching all TitleFormat expressions.
+- Minor fix to vertical text.
 ### Removed
 ### Fixed
 - Crash when no data is available painting ticks on Y axis.
