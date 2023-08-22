@@ -1,5 +1,5 @@
 ﻿'use strict';
-//08/03/23
+//22/08/23
 
 /* 
 	helpers_xxx_UI.js 
@@ -156,7 +156,7 @@ String.prototype.flip = function() {
 	let result = new Array(this.length)
 	for (let i = last; i >= 0; --i) {
 		let c = this.charAt(i);
-		let r = flipTable[c];
+		let r = flipTable[c.toLowerCase()];
 		result[last - i] = r !== void(0) ? r : c;
 	}
 	return result.join('');
@@ -177,6 +177,7 @@ const flipTable = {
 	//l : '\u0283',
 	m : '\u026F',
 	n : 'u',
+	p : 'q',
 	r : '\u0279',
 	t : '\u0287',
 	v : '\u028C',
