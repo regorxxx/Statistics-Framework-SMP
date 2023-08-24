@@ -461,14 +461,17 @@ function _chart({
 						const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
 						const keyW = gr.CalcTextWidth(key, this.gFont);
 						const keyH = gr.CalcTextHeight(key, this.gFont);
-						if (this.configuration.bAltVerticalText) {
+						if (this.configuration.bAltVerticalText) { // Flip chars
 							gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
 							gr.DrawString(key, this.gFont, this.axis.y.color, labelOver.coord[0][0].from.x - labelOver.r - keyH * 2 , this.y + (this.h - this.y) / 2 - keyW*2/3, w, this.h, StringFormatFlags.DirectionVertical);
 							gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
-						} else {
+						} else { // Draw vertical text in 2 passes, with different rendering hinting and alpha channel to enhance readability
 							const img = gdi.CreateImage(keyW, keyH);
 							const _gr = img.GetGraphics();
-							_gr.DrawString(key, this.gFont, this.axis.y.color, 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
+							_gr.SetTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
+							_gr.DrawString(key, this.gFont, RGBA(...toRGB(this.axis.y.color), 200), 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
+							_gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+							_gr.DrawString(key, this.gFont, RGBA(...toRGB(this.axis.y.color), 123), 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
 							img.RotateFlip(RotateFlipType.Rotate90FlipXY)
 							img.ReleaseGraphics(_gr);
 							gr.SetInterpolationMode(InterpolationMode.NearestNeighbor);
@@ -499,12 +502,27 @@ function _chart({
 						}
 					});
 					if (this.axis.y.key.length && this.axis.y.showKey) {
-						const key = this.axis.y.key.flip(); // Easy way to vertically show a string from bottom to top
+						const key = this.configuration.bAltVerticalText ? this.axis.y.key.flip() : this.axis.y.key;
 						const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
 						const keyW = gr.CalcTextWidth(key, this.gFont);
-						gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-						gr.DrawString(key, this.gFont, this.axis.y.color, x - yOffsetKey - maxTickW - _scale(4), this.y + (this.h - this.y) / 2 - keyW/2, w, this.h, StringFormatFlags.DirectionVertical);
-						gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+						const keyH = gr.CalcTextHeight(key, this.gFont);
+						if (this.configuration.bAltVerticalText) { // Flip chars
+							gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+							gr.DrawString(key, this.gFont, this.axis.y.color, x - yOffsetKey - maxTickW - _scale(4), this.y + (this.h - this.y) / 2 - keyW/2, w, this.h, StringFormatFlags.DirectionVertical);
+							gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+						} else { // Draw vertical text in 2 passes, with different rendering hinting and alpha channel to enhance readability
+							const img = gdi.CreateImage(keyW, keyH);
+							const _gr = img.GetGraphics();
+							_gr.SetTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
+							_gr.DrawString(key, this.gFont, RGBA(...toRGB(this.axis.y.color), 200), 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
+							_gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+							_gr.DrawString(key, this.gFont, RGBA(...toRGB(this.axis.y.color), 123), 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
+							img.RotateFlip(RotateFlipType.Rotate90FlipXY)
+							img.ReleaseGraphics(_gr);
+							gr.SetInterpolationMode(InterpolationMode.NearestNeighbor);
+							gr.DrawImage(img, x - yOffsetKey - maxTickW - _scale(5), this.y + (this.h - this.y) / 2 - keyW/2, keyH, keyW, 0, 0, img.Width, img.Height);
+							gr.SetInterpolationMode(InterpolationMode.Default);
+						}
 					}
 				}
 				// X Axis ticks

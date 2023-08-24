@@ -2,6 +2,7 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [0.3.1](#031---2023-08-24)
 - [0.3.0](#030---2023-08-24)
 - [0.2.0](#020---2022-08-04)
 - [0.1.0](#010---2022-06-21)
@@ -11,6 +12,13 @@
 ### Changed
 ### Removed
 ### Fixed
+
+## [0.3.1] - 2023-08-24
+### Added
+### Changed
+### Removed
+### Fixed
+- Vertical text clear type fixing.
 
 ## [0.3.0] - 2023-08-24
 ### Added
@@ -56,7 +64,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/d28f441...v0.1.0
