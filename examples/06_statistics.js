@@ -4,12 +4,11 @@
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
 
-window.DefinePanel('Statistics example 6', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
+window.DefinePanel('Statistics example 5', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
 /* 
 	In this example only one serie and one chart are drawn. 15 Top genres.
 	Data is passed async, so the chart is reloaded when all data is calculated.
-	p-p plot
 */
 FbTitleFormat.prototype.EvalWithMetadbsAsync = function EvalWithMetadbsAsync(handleList) {
 	const size = handleList.Count;

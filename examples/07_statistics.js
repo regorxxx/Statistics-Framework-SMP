@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/08/23
+//24/08/23
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
@@ -20,11 +20,12 @@ window.DefinePanel('Statistics example7', {author:'XXX', version: '1.0.0', featu
 	color: [rgbSerie1, ...]
 	Any color not set is set randomly at startup.
 	
-	In this example only two series are drawn and one chart.
+	In this example only two series are drawn and one pie chart.
 */
 const chart = new _chart({
-	data: [[{x:'A', y: 10},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}], [{x:'A', y: 3},{x:'B', y: 6},{x:'C', y: 7},{x:'D', y: 8},{x:'E', y: 5}]],
+	data: [[{x:'A', y: 20},{x:'B', y: 4},{x:'C', y: 6},{x:'D', y: 7},{x:'E', y: 3}], [{x:'A', y: 3},{x:'B', y: 6},{x:'C', y: 7},{x:'D', y: 8},{x:'E', y: 5}]],
 	graph: {type: 'pie'},
+	chroma: {scheme: 'BuGn'},
 	dataManipulation: {sort: null, filter: null, slice: null, distribution: null},
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
