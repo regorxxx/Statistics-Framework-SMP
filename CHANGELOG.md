@@ -2,18 +2,29 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [0.3.0](#030---2023-08-24)
 - [0.2.0](#020---2022-08-04)
 - [0.1.0](#010---2022-06-21)
 
 ## [Unreleased][]
 ### Added
-- 'pie' graph type. Colors are set per data point, not only per serie. i.e. A serie with 4 values, requires at least 4 colors. Not setting one will fallback to a random Chroma Palette (per serie). In case of using multiple series to showcase the same categories, it's recommended to set a specific Chroma scheme, so all series use the same palette.
+### Changed
+### Removed
+### Fixed
+
+## [0.3.0] - 2023-08-24
+### Added
+- 'pie' graph type. Colors are set per data point, not only per serie. i.e. A serie with 4 values, requires at least 4 colors. Not setting one will fallback to a random Chroma Palette (per serie). In case of using multiple series to showcase the same categories, it's recommended to set a specific Chroma scheme (like 'BuGn'), so all series use the same palette.
+- 'doughnut' graph type. Colors are set per data point, not only per serie. Read comments above about 'pie' graph type.
+- 'singleLabels' axis variable to not draw multiple times the X labels per serie (only applicable to 'pie' graph type). This is the default behavior.
 - 'dataAsync' variable to pass function returning a promise or a promise, resolving to data, to initialize a graph while calculating data without blocking the panel. Once the promise is resolved the chart is repaint with the data.
 - 'configuration' variable to pass some chart exotic configurations. Currently allows 'bLoadAsyncData' key, which is set to true by default. i.e. when passing asynchronous data, it will be refreshed once available. Setting it to false will not try to repaint the chart with the data automatically.
-- '05_statistics' example file to showcase the asynchronous data feature.
+- '05_statistics.js' and '06_statistics.js' new examples showing asynchronous loading.
+- '07_statistics.js' and '08_statistics.js' new examples showing pie and doughnut graphs.
 - Animation while loading asynchronous data.
 ### Changed
 - Minor performance improvement (usually on subsequent calls) caching all TitleFormat expressions.
+- Improvements to vertical text using image rotation instead of chars flipped. Old behavior may be used setting 'configuration.bAltVerticalText' to true.
 - Minor fix to vertical text.
 ### Removed
 ### Fixed
@@ -45,6 +56,7 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/d28f441...v0.1.0
