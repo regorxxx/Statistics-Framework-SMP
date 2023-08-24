@@ -1,5 +1,5 @@
 ﻿'use strict';
-//22/08/23
+//24/08/23
 
 include('statistics_xxx_helper.js');
 include('..\\..\\helpers\\popup_xxx.js');
@@ -9,12 +9,12 @@ function _chart({
 				data /* [[{x, y}, ...]]*/,
 				dataAsync = null, /* function returning a promise or promise, resolving to data, see above*/
 				colors = [/* rgbSerie1, ... */],
-				chroma = {/* scheme, colorBlindSafe */},
+				chroma = {/* scheme, colorBlindSafe */}, // diverging, qualitative, sequential, random or [color, ...] see https://vis4.net/chromajs/#color-scales
 				graph = {/* type, borderWidth, point */},
 				dataManipulation = {/* sort, filter, slice, distribution , probabilityPlot*/},
 				background = {/* color, image*/},
 				grid = {x: {/* show, color, width */}, y: {/* ... */}},
-				axis = {x: {/* show, color, width, ticks, labels, key */}, y: {/* ... */}},
+				axis = {x: {/* show, color, width, ticks, labels, key *, singleLabels/}, y: {/* ... */}},
 				margin = {/* left, right, top, bottom */}, 
 				x = 0,
 				y = 0,
@@ -23,7 +23,7 @@ function _chart({
 				title,
 				gFont = _gdiFont('Segoe UI', _scale(10)),
 				tooltipText = '',
-				configuration = {/* bLoadAsyncData: true */}
+				configuration = {/* bLoadAsyncData: true , bAltVerticalText: false */}
 		} = {}) {
 	// Global tooltip
 	this.tooltip = new _tt(null);
@@ -164,7 +164,7 @@ function _chart({
 		let valH;
 		let circleArr = [];
 		const labelCoord = [];
-		const c = {x: (w - x) / 2, y: y / 2};
+		const c = {x:  x + w / 2, y: (y + h) / 2};
 		const ticks = r * 2 * Math.PI;
 		let iY, iX;
 		for (let j = 0; j < ticks; j++) {
@@ -183,6 +183,48 @@ function _chart({
 			const sliceTicks = perc * ticks;
 			const iAlpha = 2 * Math.PI * perc;
 			for (let h = 0; h < sliceTicks; h++) {
+				iY = r * Math.sin(alpha + iAlpha / sliceTicks * h)
+				iX = r * Math.cos(alpha + iAlpha / sliceTicks * h)
+				circleArr.push(c.x + iX, c.y + iY);
+			}
+			gr.FillPolygon(this.colors[i][j], 0, circleArr);
+			if (bFocused) {gr.FillPolygon(borderColor, 0, circleArr);}
+			// Borders
+			if (this.graph.borderWidth) {
+				gr.DrawPolygon(borderColor, this.graph.borderWidth, circleArr);
+			}
+			circleArr.push(... Object.values(c));
+			alpha += iAlpha;
+			this.dataCoords[i][j] = {c: {...c}, r1: 0, r2: r, alpha1: alpha - iAlpha, alpha2: alpha};
+			labelCoord.push({from: {...c}, to: {x: c.x + iX, y: c.y + iY}, val: perc * 100, alpha});
+		});
+		return labelCoord;
+	};
+	
+	this.paintDoughnut = (gr, serie, i, x, y, w, h, maxY, r, rInner) => {
+		// Antialias for lines use gr.SetSmoothingMode(4) before calling
+		// Values
+		let valH;
+		let circleArr = [];
+		const labelCoord = [];
+		const c = {x:  x + w / 2, y: (y + h) / 2};
+		const ticks = r * 2 * Math.PI;
+		let iY, iX;
+		let alpha = 0;
+		serie.forEach((value, j, thisSerie) => {
+			const borderColor = RGBA(...toRGB(invert(this.colors[i][j], true)), getBrightness(...toRGB(this.colors[i][j])) < 50 ? 300 : 25);
+			const bFocused = this.currPoint[0] === i && this.currPoint[1] === j;
+			circleArr = [];
+			const sumY = thisSerie.reduce((acc, val) => acc + val.y, 0);
+			const perc = value.y / sumY;
+			const sliceTicks = perc * ticks;
+			const iAlpha = 2 * Math.PI * perc;
+			for (let h = 0; h < sliceTicks; h++) {
+				iY = rInner * Math.sin(alpha + iAlpha / sliceTicks * h)
+				iX = rInner * Math.cos(alpha + iAlpha / sliceTicks * h)
+				circleArr.push(c.x + iX, c.y + iY);
+			}
+			for (let h = sliceTicks; h > 0; h--) {
 				iY = r * Math.sin(alpha + iAlpha / sliceTicks * h)
 				iX = r * Math.cos(alpha + iAlpha / sliceTicks * h)
 				circleArr.push(c.x + iX, c.y + iY);
@@ -336,7 +378,7 @@ function _chart({
 				this.dataDraw.forEach((serie, i) => {
 					const r = tickW * (series - i) / series;
 					const serieCoord = this.paintPie(gr, serie, i, x, y, w, h, maxY, r);
-					labelOver.coord.push([{from: {x: (w - x) / 2, y: y / 2}, to: {x: (w - x) / 2 + r, y: y / 2}, val: void(0), alpha: 0}, ...serieCoord]);
+					labelOver.coord.push([{from: {x: x + w / 2, y: (y + h) / 2}, to: {x: x + w / 2 + r, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
 					this.dataCoords[i].forEach((point) => {point.r1 = (series - i - 1) / series * r;});
 				});
 				labelOver.r = tickW;
@@ -344,6 +386,22 @@ function _chart({
 				break;
 			}
 			case 'doughnut': {
+				x -= this.axis.x.width * 1/2;
+				tickW = Math.min((w - this.margin.leftAuto) / 2, (y - h - this.margin.top - this.margin.bottom) / 2);
+				barW = 0;
+				offsetTickText = - tickW/ 2;
+				// Values
+				gr.SetSmoothingMode(4); // Antialias for lines
+				const series = this.dataDraw.length + 1;
+				this.dataDraw.forEach((serie, i) => {
+					const r1 = tickW * (series - i) / series;
+					const r2 = tickW * (series - i - 1) / series;
+					const serieCoord = this.paintDoughnut(gr, serie, i, x, y, w, h, maxY, r1, r2);
+					labelOver.coord.push([{from: {x: x + w / 2, y: (y + h) / 2}, to: {x: x + w / 2 + r1, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
+					this.dataCoords[i].forEach((point) => {point.r1 = (series - i - 1) / series * r1;});
+				});
+				labelOver.r = tickW;
+				gr.SetSmoothingMode(0);
 				break;
 			}
 			case 'bars':
@@ -366,7 +424,7 @@ function _chart({
 				// Y Axis ticks
 				if (this.axis.y.show || this.axis.x.show) {
 					if (this.axis.y.labels || this.axis.x.labels) {
-						const series = this.dataDraw.length;
+						const series = this.dataDraw.length + (this.graph.type === 'doughnut' ? 1 : 0);
 						this.dataDraw.forEach((serie, i) => {
 							const labels = labelOver.coord[i];
 							let prevLabel = labels[0];
@@ -376,23 +434,13 @@ function _chart({
 									const labelText = round(label.val, 0) + '%';
 									const tickH = gr.CalcTextHeight(labelText, this.gFont);
 									const tickW = gr.CalcTextWidth(labelText, this.gFont);
-									// const minX = Math.min(label.to.x, label.from.x, prevLabel.to.x, prevLabel.from.x);
-									// const maxX = Math.max(label.to.x, label.from.x, prevLabel.to.x, prevLabel.from.x);
-									// const minY = Math.min(label.to.y, label.from.y, prevLabel.to.y, prevLabel.from.y);
-									// const maxY = Math.max(label.to.y, label.from.y, prevLabel.to.y, prevLabel.from.y);
-									// const yTickText = (label.to.y + prevLabel.to.y + prevLabel.from.y) / 3 - tickH / 2 + (series > 1 ? (series - i) / series**2 * labelOver.r * Math.sin((label.alpha + prevLabel.alpha) / 2) : 0);
-									// const xTickText = (label.to.x + prevLabel.to.x + prevLabel.from.x) / 3 - tickW / 2 + (series > 1 ? (series - i) / series**2 * labelOver.r * Math.cos((label.alpha + prevLabel.alpha) / 2) : 0);
-									// const centroid = 2 * Math.sin((label.alpha - prevLabel.alpha) / 2) / (3 * (label.alpha - prevLabel.alpha) / 2) * labelOver.r * (series - i) / series;
-									// const centroid = 2 * Math.sin((label.alpha - prevLabel.alpha) / 2) / (3 * (label.alpha - prevLabel.alpha) / 2) * labelOver.r * (series === 0 ? 1 : ((series - i)**3 - (i === (series - 1) ? 0 : (series - i + 1))**3) / ((series - i)**2 - (i === series - 1 ? 0 : (series - i + 1)**2)) / series);
-									// const yTickText = label.from.y + centroid * Math.sin((label.alpha - prevLabel.alpha) / 2 + prevLabel.alpha) - tickH / 2 + (series > 1 ? (series - i) / series * labelOver.r / 2 * Math.sin((label.alpha + prevLabel.alpha) / 2) : 0);
-									// const xTickText = label.from.x + centroid * Math.cos((label.alpha - prevLabel.alpha) / 2 + prevLabel.alpha) - tickW / 2 + (series > 1 ? (series - i) / series * labelOver.r / 2 * Math.cos((label.alpha + prevLabel.alpha) / 2) : 0);
 									const centroid = labelOver.r / series * ((series - (i + 1))/2 + (series - i)/2);
 									const yTickText = label.from.y + centroid * Math.sin(tetha) - tickH / 2;
 									const xTickText = label.from.x + centroid * Math.cos(tetha) - tickW / 2;
 									const flags = DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
 									gr.GdiDrawText(labelText, this.gFont, this.axis.y.color, xTickText, yTickText, tickW, tickH, flags);
 								}
-								if (this.axis.x.labels) { // keys
+								if (this.axis.x.labels && i === 0 || !this.axis.x.singleLabels) { // keys
 									const labelText = [...xAsisValues][j];
 									const tickH = gr.CalcTextHeight(labelText, this.gFont);
 									const tickW = gr.CalcTextWidth(labelText, this.gFont);
@@ -409,22 +457,31 @@ function _chart({
 						});
 					}
 					if (this.axis.y.key.length && this.axis.y.showKey) {
-						const key = this.axis.y.key.flip(); // Easy way to vertically show a string from bottom to top
+						const key = this.configuration.bAltVerticalText ? this.axis.y.key.flip() : this.axis.y.key;
 						const maxTickW = gr.CalcTextWidth(tickText[tickText.length - 1], this.gFont);
 						const keyW = gr.CalcTextWidth(key, this.gFont);
 						const keyH = gr.CalcTextHeight(key, this.gFont);
-						gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
-						gr.DrawString(key, this.gFont, this.axis.y.color, labelOver.coord[0][0].from.x - labelOver.r - keyH * 2 , this.y + (this.h - this.y) / 2 - keyW*2/3, w, this.h, StringFormatFlags.DirectionVertical);
-						gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+						if (this.configuration.bAltVerticalText) {
+							gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+							gr.DrawString(key, this.gFont, this.axis.y.color, labelOver.coord[0][0].from.x - labelOver.r - keyH * 2 , this.y + (this.h - this.y) / 2 - keyW*2/3, w, this.h, StringFormatFlags.DirectionVertical);
+							gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+						} else {
+							const img = gdi.CreateImage(keyW, keyH);
+							const _gr = img.GetGraphics();
+							_gr.DrawString(key, this.gFont, this.axis.y.color, 0 ,0, keyW, keyH, StringFormatFlags.NoWrap);
+							img.RotateFlip(RotateFlipType.Rotate90FlipXY)
+							img.ReleaseGraphics(_gr);
+							gr.SetInterpolationMode(InterpolationMode.NearestNeighbor);
+							gr.DrawImage(img, labelOver.coord[0][0].from.x - labelOver.r - keyH * 2, this.y + (this.h - this.y) / 2 - keyW * 2/3, keyH, keyW, 0, 0, img.Width, img.Height);
+							gr.SetInterpolationMode(InterpolationMode.Default);
+						}
 					}
 				}
 				// X Axis ticks
 				if (this.axis.x.show) {
 					if (this.axis.x.key.length && this.axis.x.showKey) {
-						// const offsetH = this.axis.x.labels ? gr.CalcTextHeight('A', this.gFont) : 0;
-						const offsetH = 0;
 						const keyW = gr.CalcTextWidth(this.axis.x.key, this.gFont);
-						gr.GdiDrawText(this.axis.x.key, this.gFont, this.axis.x.color, labelOver.coord[0][0].from.x - keyW/2, y + this.axis.x.width + offsetH, keyW, this.h, DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX);
+						gr.GdiDrawText(this.axis.x.key, this.gFont, this.axis.x.color, labelOver.coord[0][0].from.x - keyW/2, y + this.axis.x.width, keyW, this.h, DT_CENTER | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX);
 					}
 				}
 				break;
@@ -556,7 +613,6 @@ function _chart({
 					const len = serie.length;
 					for (let j = 0; j < len; j++) {
 						const point = serie[j];
-						// this.dataCoords[i][j] = {c: {...c}, r1: 0, r2: r, alpha1: alpha - iAlpha, alpha2: alpha};
 						const xc = x - point.c.x;
 						const yc = y - point.c.y;
 						const r = (xc**2 + yc**2)**(1/2);
@@ -879,50 +935,52 @@ function _chart({
 	this.checkColors = (bForce = false) => { // Fill holes and add missing colors at end
 		if (!this.colors || bForce) {this.colors = [];}
 		const series = Math.max(this.series, this.dataDraw.length);
-		if (this.graph.type === 'pie') {
-			if (this.colors.filter(Boolean).length !== series) {
-				for (let i = 0; i < series; i++) {
-					if (!this.colors[i]) {this.colors[i] = [];}
+		switch (this.graph.type) {
+			case 'doughnut':
+			case 'pie':
+				if (this.colors.filter(Boolean).length !== series) {
+					for (let i = 0; i < series; i++) {
+						if (!this.colors[i]) {this.colors[i] = [];}
+					}
 				}
-			}
-			if (this.colors.some((arrCol, i) => arrCol.filter(Boolean).length !== this.dataDraw[i].length)) {
-				this.colors.forEach((arrCol, i) => {
-					const serieLen = this.dataDraw[i].length;
-					// Random colors or using Chroma scale with specific scheme or array of colors
-					let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
-					let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
-					if (bRandom) {
-						arrCol.forEach((color, j) => {
-							if (!color) {arrCol[j] = this.randomColor();}
-						});
-						for (let j = arrCol.length; j < serieLen; j++) {
-							arrCol.push(this.randomColor());
-						}
-					} else { // Chroma scale method
-						let scheme;
-						// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
-						if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
-							const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
-							scheme = arr[Math.floor(Math.random() * arr.length)];
-						} else { // An array of colors or colorbrewer palette (string)
-							scheme = this.chroma.scheme;
-						}
-						const scale = this.chromaColor(scheme, serieLen);
-						let k = 0;
-						arrCol.forEach((color, j) => {
-							if (!color) {
-								arrCol[j] = scale[k]; 
+				if (this.colors.some((arrCol, i) => arrCol.filter(Boolean).length !== this.dataDraw[i].length)) {
+					this.colors.forEach((arrCol, i) => {
+						const serieLen = this.dataDraw[i].length;
+						// Random colors or using Chroma scale with specific scheme or array of colors
+						let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
+						let bRandom = !this.chroma.scheme || schemeStr === 'random' || schemeStr === 'rand';
+						if (bRandom) {
+							arrCol.forEach((color, j) => {
+								if (!color) {arrCol[j] = this.randomColor();}
+							});
+							for (let j = arrCol.length; j < serieLen; j++) {
+								arrCol.push(this.randomColor());
+							}
+						} else { // Chroma scale method
+							let scheme;
+							// May be a key to use a random colorbrewer palette: diverging, qualitative & sequential
+							if (schemeStr && colorbrewer.hasOwnProperty(schemeStr)) {
+								const arr = this.chroma.colorBlindSafe ? colorbrewer.colorBlind[schemeStr] : colorbrewer[schemeStr];
+								scheme = arr[Math.floor(Math.random() * arr.length)];
+							} else { // An array of colors or colorbrewer palette (string)
+								scheme = this.chroma.scheme;
+							}
+							const scale = this.chromaColor(scheme, serieLen);
+							let k = 0;
+							arrCol.forEach((color, j) => {
+								if (!color) {
+									arrCol[j] = scale[k]; 
+									k++;
+								}
+							});
+							for (let j = arrCol.length; j < serieLen; j++) {
+								arrCol.push(scale[k]);
 								k++;
 							}
-						});
-						for (let j = arrCol.length; j < serieLen; j++) {
-							arrCol.push(scale[k]);
-							k++;
 						}
-					}
-				});
-			}
-		} else {
+					});
+				}
+		default:
 			if (this.colors.filter(Boolean).length !== series) {
 				// Random colors or using Chroma scale with specific schems or array of colors
 				let schemeStr = this.chroma.scheme && typeof this.chroma.scheme === 'string' ? this.chroma.scheme.toLowerCase() : null;
@@ -1046,7 +1104,7 @@ function _chart({
 		this.background = {color: RGB(255 , 255, 255), image: null};
 		this.grid = {x: {show: false, color: RGB(0,0,0), width: _scale(1)}, y: {show: false, color: RGB(0,0,0), width: _scale(1)}};
 		this.axis = {
-				x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: '', showKey: true},
+				x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, singleLabels: true, key: '', showKey: true},
 				y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 10, labels: true, key: 'tracks', showKey: true}
 		};
 		this.margin = {left: _scale(20), right: _scale(20), top: _scale(20), bottom: _scale(20)};
@@ -1083,6 +1141,6 @@ function _chart({
 	this.h = h;
 	this.title = typeof title !== 'undefined' ? title : window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
 	this.tooltipText = tooltipText;
-	this.configuration = {bLoadAsyncData: true, ...(configuration || {})};
+	this.configuration = {bLoadAsyncData: true, bAltVerticalText: false, ...(configuration || {})};
 	this.init();
 }
