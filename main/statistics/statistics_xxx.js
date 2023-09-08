@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/08/23
+//08/09/23
 
 include('statistics_xxx_helper.js');
 include('..\\..\\helpers\\popup_xxx.js');
@@ -46,7 +46,7 @@ function _chart({
 	this.paintBg = (gr) => {
 		if (this.background.imageGDI) {
 			gr.DrawImage(this.background.imageGDI, this.x, this.y, this.w, this.h, 0, 0, this.w, this.h);
-		} else {
+		} else if (this.background.color !== null) {
 			gr.FillSolidRect(this.x, this.y, this.w, this.h, this.background.color);
 		}
 	};
@@ -258,7 +258,7 @@ function _chart({
 		this.stats.maxY = maxY;
 		this.stats.minY = minY;
 		// Ticks
-		const ticks = this.steps(0, maxY, this.axis.y.ticks);
+		const ticks = this.steps(0, maxY, this.axis.y.ticks === 'auto' ? void(0) : Number(this.axis.y.ticks));
 		const tickText = ticks.map((tick) => {return this.nFormatter(tick, 1);});
 		// Retrieve all different label on all series
 		const xAsisValues = new Set();
@@ -493,10 +493,12 @@ function _chart({
 				if (this.axis.y.show) {
 					ticks.forEach((tick, i) => {
 						const yTick = y - tick / maxY * (y - h) || y;
+						if (yTick < 0) {return;}
+						const tickH = gr.CalcTextHeight(tickText[i], this.gFont);
+						const yTickText = yTick - tickH / 2;
+						if (yTickText < 0) {return;}
 						gr.DrawLine(x - this.axis.x.width * 2, yTick, x + this.axis.x.width, yTick, this.axis.y.width / 2, this.axis.y.color);
 						if (this.axis.y.labels) {
-							const tickH = gr.CalcTextHeight(tickText[i], this.gFont);
-							const yTickText = yTick - tickH / 2;
 							const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
 							gr.GdiDrawText(tickText[i], this.gFont, this.axis.y.color, this.x - this.axis.y.width / 2 - _scale(4) + xOffsetKey, yTickText, this.margin.leftAuto, tickH, flags);
 						}
@@ -574,6 +576,8 @@ function _chart({
 	};
 	
 	this.paint = (gr) => {
+		if (!window.ID) {return;}
+		if (!window.Width || !window.Height) {return;}
 		this.paintBg(gr);
 		this.paintGraph(gr);
 		this.pop.paint(gr);
@@ -587,6 +591,9 @@ function _chart({
 		Helpers
 	*/
 	this.steps = (min, max, num = 10) => {
+		const len = this.h - this.y - this.margin.bottom - this.margin.top;
+		const minSep = Math.round(len / 5);
+		if (len / num < minSep) {num = Math.round(len / minSep);}
 		const step = Math.floor((max - min) / num);
 		return min !== max ? range(min, max, step || 1) : [min]; 
 	};
@@ -665,6 +672,7 @@ function _chart({
 	};
 	
 	this.move = (x, y) => {
+		if (!window.ID) {return false;}
 		if (this.trace(x,y)) {
 			if (this.pop.isEnabled()) {this.pop.move(x, y);}
 			else {
@@ -1062,6 +1070,8 @@ function _chart({
 				}
 			}
 		}
+		// Fix stringify/parse Infinity becoming null
+		if (this.dataManipulation.slice && this.dataManipulation.slice[1] === null) {this.dataManipulation.slice[1] = Infinity;}
 		return bPass;
 	}
 	
