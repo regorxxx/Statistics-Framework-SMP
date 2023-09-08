@@ -1,5 +1,5 @@
 ﻿'use strict';
-//22/08/23
+//08/09/23
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
@@ -24,9 +24,9 @@ function createStatisticsMenu(bClear = true) {
 			if (option.entryText === 'sep' && menu.getEntries().pop().entryText !== 'sep') {menu.newEntry({menuName, entryText: 'sep'}); return;} // Add sep only if any entry has been added
 			if (option.isEq && option.key === option.value || !option.isEq && option.key !== option.value || option.isEq === null) {
 				menu.newEntry({menuName, entryText: option.entryText, func: () => {
-					if (addFunc) {addFunc();}
+					if (addFunc) {addFunc(option);}
 					if (subKey) {this.changeConfig({[key]: {[subKey]: option.newValue}});}
-					else {this.changeConfig({[key]: option.newValues});}
+					else {this.changeConfig({[key]: option.newValue});}
 				}});
 				if (bCheck) {
 					menu.newCheckMenu(menuName, option.entryText, void(0), () => {
