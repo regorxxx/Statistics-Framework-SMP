@@ -14,7 +14,7 @@
 - Better Y axis tick management for auto mode.
 ### Removed
 ### Fixed
-- Y axis ticks were sometimes not properly set to respect the top margin.
+- Y axis ticks were sometimes not properly set to respect the margins or panel size.
 - Fixed some setting not being set in some cases while using the menu.
 
 ## [0.3.1] - 2023-08-24
