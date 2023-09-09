@@ -9,6 +9,7 @@
 
 ## [Unreleased][]
 ### Added
+- - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
 ### Changed
 - Background color can now be set to null to use it as overlay.
 - Better Y axis tick management for auto mode.
