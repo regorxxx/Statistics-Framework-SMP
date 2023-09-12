@@ -9,12 +9,16 @@
 
 ## [Unreleased][]
 ### Added
-- - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
+- 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
+- 'bPopupBackground' configuration variable to display an overlay while loading Async data. Default behavior is false, i.e. only the text and animation is displayed.
 ### Changed
+- Tooltip now also shows percentages on pie and doughnut modes.
 - Background color can now be set to null to use it as overlay.
 - Better Y axis tick management for auto mode.
 ### Removed
 ### Fixed
+- Improved color checking for bad inputs.
+- Improved data checking for bad inputs.
 - Y axis ticks were sometimes not properly set to respect the margins or panel size.
 - Fixed some setting not being set in some cases while using the menu.
 
