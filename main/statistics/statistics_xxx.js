@@ -1,5 +1,5 @@
 ﻿'use strict';
-//12/09/23
+//21/10/23
 
 include('statistics_xxx_helper.js');
 include('..\\..\\helpers\\popup_xxx.js');
@@ -11,7 +11,7 @@ function _chart({
 				dataAsync = null, /* function returning a promise or promise, resolving to data, see above*/
 				colors = [/* rgbSerie1, ... */],
 				chroma = {/* scheme, colorBlindSafe */}, // diverging, qualitative, sequential, random or [color, ...] see https://vis4.net/chromajs/#color-scales
-				graph = {/* type, borderWidth, point */},
+				graph = {/* type, multi, borderWidth, point */},
 				dataManipulation = {/* sort, filter, slice, distribution , probabilityPlot*/},
 				background = {/* color, image*/},
 				grid = {x: {/* show, color, width */}, y: {/* ... */}},
@@ -24,10 +24,11 @@ function _chart({
 				title,
 				gFont = _gdiFont('Segoe UI', _scale(10)),
 				tooltipText = '',
-				configuration = {/* bLoadAsyncData: true , bAltVerticalText: false, bPopupBackground: false */}
+				configuration = {/* bLoadAsyncData: true , bAltVerticalText: false, bPopupBackground: false, bProfile: false, bSlicePerKey: true */}
 		} = {}) {
 	// Global tooltip
 	this.tooltip = new _tt(null);
+	this.profile = null;
 	
 	/*
 		Paint
@@ -40,14 +41,14 @@ function _chart({
 		}
 	};
 	
-	this.paintScatter = (gr, serie, i, x, y, w, h, maxY, tickW) => {
+	this.paintScatter = (gr, serie, i, x, y, w, h, maxY, tickW, xAxisValues) => {
 		// Antialias for lines use gr.SetSmoothingMode(4) before calling
 		const selBar = this.graph.borderWidth * 2;
 		let valH;
 		const borderColor = RGBA(...toRGB(invert(this.colors[i], true)), getBrightness(...toRGB(this.colors[i])) < 50 ? 300 : 25);
 		serie.forEach((value, j) => {
 			valH = value.y / maxY * (y - h);
-			const xPoint = x + j * tickW;
+			const xPoint = x + xAxisValues.indexOf(value.x) * tickW;
 			const yPoint = y - valH;
 			const bFocused = this.currPoint[0] === i && this.currPoint[1] === j;
 			if (bFocused) {
@@ -96,7 +97,7 @@ function _chart({
 		});
 	};
 	
-	this.paintLines = (gr, serie, i, x, y, w, h, maxY, tickW, last) => {
+	this.paintLines = (gr, serie, i, x, y, w, h, maxY, tickW, last, xAxisValues) => {
 		// Antialias for lines use gr.SetSmoothingMode(4) before calling
 		const selBar = tickW;
 		// Values
@@ -104,7 +105,8 @@ function _chart({
 		const borderColor = RGBA(...toRGB(invert(this.colors[i], true)), getBrightness(...toRGB(this.colors[i])) < 50 ? 300 : 25);
 		serie.forEach((value, j) => {
 			valH = value.y / maxY * (y - h);
-			const xPoint = x + j * tickW;
+			const idx = xAxisValues.indexOf(value.x);
+			const xPoint = x + idx * tickW;
 			const yPoint = y - valH;
 			const bFocused = this.currPoint[0] === i && this.currPoint[1] === j;
 			this.dataCoords[i][j] = {x: j > 0 ? xPoint - selBar / 2 : xPoint, y: yPoint, w: (j > 0 && j !== last ? selBar : selBar / 2), h: valH};
@@ -115,7 +117,7 @@ function _chart({
 			if (j !== 0) {
 				const paintPoint = (color) => {
 					const newValH = serie[j - 1].y / maxY * (y - h);
-					const newXPoint = x + (j - 1) * tickW;
+					const newXPoint = x + (idx - 1) * tickW;
 					const newYPoint = y - newValH;
 					gr.DrawLine(newXPoint, newYPoint, xPoint, yPoint, this.graph.borderWidth, color);
 				};
@@ -125,15 +127,17 @@ function _chart({
 		});
 	};
 	
-	this.paintBars = (gr, serie, i, x, y, w, h, maxY, tickW, barW) => {
+	this.paintBars = (gr, serie, i, x, y, w, h, maxY, tickW, barW, xAxisValues) => {
 		// Antialias for lines use gr.SetSmoothingMode(4) before calling
 		// Values
 		const xValues = x + i * barW;
 		let valH;
 		const borderColor = RGBA(...toRGB(invert(this.colors[i], true)), getBrightness(...toRGB(this.colors[i])) < 50 ? 300 : 25);
+		let offsetX = 0;
+		let notFound = 0;
 		serie.forEach((value, j) => {
 			valH = value.y / maxY * (y - h);
-			const xPoint = xValues + j * tickW;
+			const xPoint = xValues + xAxisValues.indexOf(value.x) * tickW;
 			const yPoint = y - valH;
 			const bFocused = this.currPoint[0] === i && this.currPoint[1] === j;
 			this.dataCoords[i][j] = {x: xPoint, y: yPoint, w: barW, h: valH};
@@ -153,7 +157,7 @@ function _chart({
 		let valH;
 		let circleArr = [];
 		const labelCoord = [];
-		const c = {x:  x + (w - x) / 2, y: (y + h) / 2};
+		const c = {x: x + w / 2, y: (y + h) / 2};
 		const ticks = r * 2 * Math.PI;
 		let iY, iX;
 		for (let j = 0; j < ticks; j++) {
@@ -198,7 +202,7 @@ function _chart({
 		let valH;
 		let circleArr = [];
 		const labelCoord = [];
-		const c = {x:  x + (w - x)/ 2, y: (y + h) / 2};
+		const c = {x:  x + w / 2, y: (y + h) / 2};
 		const ticks = r * 2 * Math.PI;
 		let iY, iX;
 		let alpha = 0;
@@ -254,10 +258,16 @@ function _chart({
 		const ticks = this.steps(0, maxY, this.axis.y.ticks === 'auto' ? void(0) : Number(this.axis.y.ticks));
 		const tickText = ticks.map((tick) => {return this.nFormatter(tick, 1);});
 		// Retrieve all different label on all series
-		const xAsisValues = new Set();
-		this.dataDraw.forEach((serie) => {
-			serie.forEach((value) => {xAsisValues.add(value.x);});
+		const points = [];
+		this.dataDraw.forEach((serie, i) => {
+			points.push([]);
+			serie.forEach((value) => points[i].push(value));
 		});
+		const getUniqueListBy = function getUniqueListBy(arr, key) {
+			return [...new Map(arr.map(item => [item[key], item])).values()]
+		};
+		const xAxisValues = getUniqueListBy(points.flat(Infinity), 'x').map((value) => value.x);
+		const xAxisValuesLen = xAxisValues.length;
 		const labelOver = {coord: []}; // For pie Graphs
 		/*
 			Draw for all graphs
@@ -278,7 +288,7 @@ function _chart({
 				}
 				if (this.axis.y.show && this.axis.y.key.length && this.axis.y.showKey) {
 					xOffsetKey = gr.CalcTextHeight(this.axis.y.key, this.gFont) + _scale(2);
-					x += xOffsetKey;
+					// x += xOffsetKey;
 					w -= xOffsetKey;
 				}
 				break;
@@ -315,27 +325,27 @@ function _chart({
 		switch (this.graph.type) {
 			case 'lines': {
 				x -= this.axis.x.width * 1/2;
-				tickW = (w - this.margin.leftAuto) / ((xAsisValues.size - 1) || 1);
+				tickW = (w - this.margin.leftAuto) / ((xAxisValuesLen - 1) || 1);
 				barW = 0;
 				offsetTickText = - tickW / 2;
 				// Values
-				const last = xAsisValues.size - 1;
+				const last = xAxisValuesLen - 1;
 				gr.SetSmoothingMode(4); // Antialias for lines
 				this.dataDraw.forEach((serie, i) => {
-					this.paintLines(gr, serie, i, x, y, w, h, maxY, tickW, last);
+					this.paintLines(gr, serie, i, x, y, w, h, maxY, tickW, last, xAxisValues);
 				});
 				gr.SetSmoothingMode(0);
 				break;
 			}
 			case 'scatter': {
 				x -= this.axis.x.width * 1/2;
-				tickW = (w - this.margin.leftAuto) / ((xAsisValues.size - 1) || 1);
+				tickW = (w - this.margin.leftAuto) / ((xAxisValuesLen - 1) || 1);
 				barW = 0;
 				offsetTickText = - tickW/ 2;
 				// Values
 				gr.SetSmoothingMode(4); // Antialias for lines
 				this.dataDraw.forEach((serie, i) => {
-					this.paintScatter(gr, serie, i, x, y, w, h, maxY, tickW);
+					this.paintScatter(gr, serie, i, x, y, w, h, maxY, tickW, xAxisValues);
 				});
 				gr.SetSmoothingMode(0);
 				break;
@@ -343,11 +353,11 @@ function _chart({
 			case 'q-q plot':
 			case 'p-p plot': { // Mixes scatter and lines (last serie)
 				x -= this.axis.x.width * 1/2;
-				tickW = (w - this.margin.leftAuto) / ((xAsisValues.size - 1) || 1);
+				tickW = (w - this.margin.leftAuto) / ((xAxisValuesLen - 1) || 1);
 				barW = 0;
 				offsetTickText = - tickW / 2;
 				// Values
-				const last = xAsisValues.size - 1;
+				const last = xAxisValuesLen - 1;
 				gr.SetSmoothingMode(4); // Antialias for lines
 				const len = this.dataDraw.length - 1;
 				if (len > 0) { // Paint first the line, then the points
@@ -371,7 +381,7 @@ function _chart({
 				this.dataDraw.forEach((serie, i) => {
 					const r = tickW * (series - i) / series;
 					const serieCoord = this.paintPie(gr, serie, i, x, y, w, h, maxY, r);
-					labelOver.coord.push([{from: {x: x + (w - x) / 2, y: (y + h) / 2}, to: {x: x + (w - x) / 2 + r, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
+					labelOver.coord.push([{from: {x: x +  w / 2, y: (y + h) / 2}, to: {x: x + w / 2 + r, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
 					this.dataCoords[i].forEach((point) => {point.r1 = (series - i - 1) / series * r;});
 				});
 				labelOver.r = tickW;
@@ -390,7 +400,7 @@ function _chart({
 					const r1 = tickW * (series - i) / series;
 					const r2 = tickW * (series - i - 1) / series;
 					const serieCoord = this.paintDoughnut(gr, serie, i, x, y, w, h, maxY, r1, r2);
-					labelOver.coord.push([{from: {x: x + (w - x) / 2, y: (y + h) / 2}, to: {x: x + (w - x) / 2 + r1, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
+					labelOver.coord.push([{from: {x: x + w / 2, y: (y + h) / 2}, to: {x: x + w / 2 + r1, y: (y + h) / 2}, val: void(0), alpha: 0}, ...serieCoord]);
 					this.dataCoords[i].forEach((point) => {point.r1 = (series - i - 1) / series * r1;});
 				});
 				labelOver.r = tickW;
@@ -399,11 +409,11 @@ function _chart({
 			}
 			case 'bars':
 			default: {
-				tickW = (w - this.margin.leftAuto) / xAsisValues.size;
+				tickW = (w - this.margin.leftAuto) / xAxisValuesLen;
 				barW = tickW / this.series;
 				// Values
 				this.dataDraw.forEach((serie, i) => {
-					this.paintBars(gr, serie, i, x, y, w, h, maxY, tickW, barW);
+					this.paintBars(gr, serie, i, x, y, w, h, maxY, tickW, barW, xAxisValues);
 				});
 			}
 		}
@@ -434,7 +444,7 @@ function _chart({
 									gr.GdiDrawText(labelText, this.gFont, this.axis.y.color, xTickText, yTickText, tickW, tickH, flags);
 								}
 								if (this.axis.x.labels && i === 0 || !this.axis.x.singleLabels) { // keys
-									const labelText = [...xAsisValues][j];
+									const labelText = xAxisValues[j];
 									const tickH = gr.CalcTextHeight(labelText, this.gFont);
 									const tickW = gr.CalcTextWidth(labelText, this.gFont);
 									const border = labelOver.r / series * (series - i);
@@ -502,7 +512,7 @@ function _chart({
 			case 'bars':
 				if (this.axis.x.show && this.axis.x.labels && this.axis.x.bAltLabels) {
 					if (w / tickW < 30) { // Don't paint labels when they can't be fitted properly
-						[...xAsisValues].forEach((valueX,  i) => {
+						xAxisValues.forEach((valueX,  i) => {
 							const xLabel= x + i * tickW;
 							valueX = this.configuration.bAltVerticalText ? valueX.flip() : valueX;
 							const xTickW = gr.CalcTextWidth(valueX, this.gFont);
@@ -524,6 +534,35 @@ function _chart({
 								gr.DrawImage(img, xLabel, y - xTickW - this.axis.x.width, keyH, xTickW, 0, 0, img.Width, img.Height);
 								gr.SetInterpolationMode(InterpolationMode.Default);
 							}
+						});
+					}
+				}
+				if (this.graph.multi) {
+					if (w / tickW < 30) { // Don't paint labels when they can't be fitted properly
+						points.forEach((serie, i) => {
+							serie.forEach((value,  j) => {
+								const zLabel= x + (xAxisValues.indexOf(value.x) + i / this.series) * tickW;
+								const valueZ = this.configuration.bAltVerticalText ? value.z.flip() : value.z;
+								const xTickW = gr.CalcTextWidth(valueZ, this.gFont);
+								if (this.configuration.bAltVerticalText) { // Flip chars
+									gr.SetTextRenderingHint(TextRenderingHint.ClearTypeGridFit);
+									gr.DrawString(valueZ, this.gFont, this.axis.x.color, zLabel, y - xTickW - this.axis.x.width, tickW, this.h, StringFormatFlags.DirectionVertical);
+									gr.SetTextRenderingHint(TextRenderingHint.SystemDefault);
+								} else {
+									const keyH = gr.CalcTextHeight(valueZ, this.gFont);
+									const img = gdi.CreateImage(xTickW, keyH);
+									const _gr = img.GetGraphics();
+									_gr.SetTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
+									_gr.DrawString(valueZ, this.gFont, RGBA(...toRGB(this.axis.x.color), 255), 0 ,0, xTickW, keyH, StringFormatFlags.NoWrap);
+									_gr.SetTextRenderingHint(TextRenderingHint.AntiAliasGridFit);
+									_gr.DrawString(valueZ, this.gFont, RGBA(...toRGB(this.axis.x.color), 123), 0 ,0, xTickW, keyH, StringFormatFlags.NoWrap);
+									img.RotateFlip(RotateFlipType.Rotate90FlipXY)
+									img.ReleaseGraphics(_gr);
+									gr.SetInterpolationMode(InterpolationMode.NearestNeighbor);
+									gr.DrawImage(img, zLabel, y - xTickW - this.axis.x.width, keyH, xTickW, 0, 0, img.Width, img.Height);
+									gr.SetInterpolationMode(InterpolationMode.Default);
+								}
+							});
 						});
 					}
 				}
@@ -569,10 +608,10 @@ function _chart({
 				// X Axis ticks
 				if (this.axis.x.show) {
 					if (w / tickW < 30) { // Don't paint labels when they can't be fitted properly
-						const last = xAsisValues.size - 1;
-						[...xAsisValues].forEach((valueX,  i) => {
+						const last = xAxisValuesLen - 1;
+						xAxisValues.forEach((valueX,  i) => {
 							const xLabel= x + i * tickW;
-							if (this.axis.x.labels && this.graph.type !== 'bars' || !this.axis.x.bAltLabels) {
+							if (this.axis.x.labels && (this.graph.type !== 'bars' || !this.axis.x.bAltLabels)) {
 								if (i === 0 && offsetTickText) { // Fix for first label position
 									const xTickW = gr.CalcTextWidth(valueX, this.gFont);
 									const flags = DT_LEFT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
@@ -605,7 +644,7 @@ function _chart({
 					});
 				}
 				if (this.grid.x.show) {
-					[...xAsisValues].forEach((tick, i) => {
+					xAxisValues.forEach((tick, i) => {
 						const flags = DT_RIGHT | DT_END_ELLIPSIS | DT_CALCRECT | DT_NOPREFIX;
 						const xLine = x + barW + i * tickW;
 						gr.DrawLine(xLine, y - this.grid.y.width, xLine, h, this.grid.x.width, this.grid.x.color);
@@ -617,8 +656,11 @@ function _chart({
 	this.paint = (gr) => {
 		if (!window.ID) {return;}
 		if (!window.Width || !window.Height) {return;}
+		if (this.configuration.bProfile) {this.profile.Reset();}
 		this.paintBg(gr);
+		if (this.configuration.bProfile) {this.profile.Print('Paint background', false);}
 		this.paintGraph(gr);
+		if (this.configuration.bProfile) {this.profile.Print('Paint graph', false);}
 		this.pop.paint(gr);
 	};
 	
@@ -727,6 +769,7 @@ function _chart({
 					this.tooltip.SetValue(
 						point.x + ': ' + point.y + (this.axis.y.key ?  ' ' + this.axis.y.key : '') +
 						(bPercent ? ' ' + _p(percent + '%') : '') +
+						(point.hasOwnProperty('z') ? ' - ' + point.z : '') +
 						(this.tooltipText && this.tooltipText.length ? tooltipText : '')
 					, true);
 					return true;
@@ -779,7 +822,26 @@ function _chart({
 		const slice = this.dataManipulation.slice;
 		if (!slice || !slice.length === 2 || (slice[0] === 0 && slice[1] === Infinity)) {return;}
 		// If end is greater than the length of the array, it uses the length of the array
-		this.dataDraw = this.dataDraw.map((serie) => {return serie.slice(...this.dataManipulation.slice)});
+		this.dataDraw = this.dataDraw.map((serie) => {return serie.slice(...slice)});
+		if (this.configuration.bSlicePerKey) {
+			const xKeys = new Set();
+			const range = Math.abs(slice[1] - slice[0]);
+			for (let i = 0; i < this.dataDraw.length; i++) {
+				const serie = this.dataDraw[i];
+				console.log(serie);
+				for (let j = 0; j < serie.length; j++) {
+					const value = serie[j];
+					console.log(serie[j]);
+					if (!xKeys.has(value.x)) {
+						if (xKeys.size >= range) {
+							this.dataDraw[i] = serie.slice(0, j);
+							break;
+						}
+						xKeys.add(value.x);
+					}
+				}
+			};
+		}
 	};
 
 	this.normal = (bInverse = false) => { // Sort as normal distribution
@@ -834,7 +896,6 @@ function _chart({
 					const total = serie.reduce((curr, val) => {return curr + val.y;}, 0);
 					const statistics = this.computeStatistics(serie);
 					if (dist === 'normal inverse') {this.normalInverse();}
-					console.log(statistics);
 					newSerie = new Array(statistics.total).fill(0);
 					const fNorm = (x) => Math.exp(-((x - statistics.mean)**2/statistics.sigma**2)/2) / (statistics.sigma * Math.sqrt(2 * Math.PI));
 					const fAcumNorm = (x) => 1/2 + fNorm(x) * (x + x**3/3 + x**5/15);
@@ -932,16 +993,46 @@ function _chart({
 		return statistics;
 	};
 	
+	this.expandData = () => {
+		if (this.graph.multi) { // 3-dimensional data with every point having multiple {Y,Z} points
+			const series = this.data.map((serie) => {return [...(serie || [])];});
+			const group = 2;
+			this.dataDraw = [];
+			for (let i = 0; i < group; i++) {this.dataDraw.push([]);}
+			series.forEach((serie, i) => {
+				serie.forEach((pointArr) => {
+					const len = pointArr.length;
+					for (let j = 0; j < len; j++) {
+						if (j >= group) {break;}
+						const point = pointArr[j];
+						this.dataDraw[j].push(point);
+					}
+				});
+			});
+			this.series = this.dataDraw.length;
+		} else {
+			this.dataDraw = this.data.map((serie) => {return [...(serie || [])];});
+		}
+	};
+	
 	this.manipulateData = () => {
 		if (!this.data) {return false;}
-		this.dataDraw = this.data.map((serie) => {return [...(serie || [])];})
+		if (this.configuration.bProfile) {this.profile.Reset();}
+		this.expandData();
+		if (this.configuration.bProfile) {this.profile.Print('Expand data', false);}
 		this.cleanData();
+		if (this.configuration.bProfile) {this.profile.Print('Clean data', false);}
 		this.filter();
+		if (this.configuration.bProfile) {this.profile.Print('Filter data', false);}
 		if (!this.distribution()) {
 			this.sort();
 			this.slice();
+			if (this.configuration.bProfile) {this.profile.Print('Sort & Slice data', false);}
 		}
-		this.probabilityPlot();
+		if (this.dataManipulation.probabilityPlot) {
+			this.probabilityPlot();
+			if (this.configuration.bProfile) {this.profile.Print('Probability plot', false);}
+		}
 	};
 	
 	/*
@@ -957,7 +1048,7 @@ function _chart({
 		if (background) {this.background = {...this.background, ...background}; this.background.imageGDI = this.background.image ? gdi.Image(this.background.image) : null;}
 		if (colors) {this.colors = colors;}
 		if (chroma) {this.chroma = {...this.chroma, ...chroma}; this.checkScheme();}
-		if (colors || chroma) {this.checkColors();}
+		if ((colors || chroma) && !dataAsync && !this.dataAsync) {this.checkColors();}
 		if (axis) {
 			if (axis.x) {this.axis.x = {...this.axis.x, ...axis.x};}
 			if (axis.y) {this.axis.y = {...this.axis.y, ...axis.y};}
@@ -979,7 +1070,10 @@ function _chart({
 		}
 		this.checkConfig();
 		if (data || dataManipulation || graph) {this.initData();}
-		if (this.configuration.bLoadAsyncData && dataAsync) {this.initDataAsync();} // May be managed by the chart or externally
+		if (this.configuration.bLoadAsyncData && dataAsync) {
+			this.initDataAsync();
+			if (colors || chroma) {this.checkColors();}
+		} // May be managed by the chart or externally
 		this.repaint();
 		return this;
 	};
@@ -1100,6 +1194,7 @@ function _chart({
 	};
 	
 	this.checkConfig = () => {
+		if (this.configuration.bProfile) {this.profile = new FbProfiler(this.title)};
 		if (this.graph.type) {this.graph.type = this.graph.type.replace('–','-');}
 		if (this.dataManipulation.probabilityPlot) {this.dataManipulation.probabilityPlot = this.dataManipulation.probabilityPlot.replace('–','-');}
 		const pPlot = this.dataManipulation.probabilityPlot ? this.dataManipulation.probabilityPlot.toLowerCase() : null;
@@ -1156,7 +1251,7 @@ function _chart({
 		this.cleanPoints();
 		// Missing colors
 		this.checkScheme();
-		this.checkColors();
+		if (this.data.length) {this.checkColors();}
 	}
 	
 	this.initDataAsync = () => {
@@ -1182,7 +1277,7 @@ function _chart({
 	this.setDefaults = () => {
 		this.colors = [];
 		this.chroma = {scheme: 'sequential', colorBlindSafe: true}; // diverging, qualitative, sequential, random or [color, ...] see https://vis4.net/chromajs/#color-scales
-		this.graph = {type: 'bars', borderWidth: _scale(1), point: null};
+		this.graph = {type: 'bars', multi: false, borderWidth: _scale(1), point: null};
 		this.dataManipulation = {sort: (a, b) => {return b.y - a.y;}, filter: null, slice: [0, 10], distribution: null, probabilityPlot: null};
 		this.background = {color: RGB(255 , 255, 255), image: null};
 		this.grid = {x: {show: false, color: RGB(0,0,0), width: _scale(1)}, y: {show: false, color: RGB(0,0,0), width: _scale(1)}};
@@ -1224,7 +1319,7 @@ function _chart({
 	this.h = h;
 	this.title = typeof title !== 'undefined' ? title : window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
 	this.tooltipText = tooltipText;
-	this.configuration = {bLoadAsyncData: true, bAltVerticalText: false, bPopupBackground: false, ...(configuration || {})};
+	this.configuration = {bLoadAsyncData: true, bAltVerticalText: false, bPopupBackground: false, bProfile: false, bSlicePerKey: true, ...(configuration || {})};
 	/* 
 	Animation
 	*/
