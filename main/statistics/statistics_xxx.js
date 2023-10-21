@@ -734,15 +734,21 @@ function _chart({
 				}
 				break;
 			default:
+				const tracedPoints = [];
 				for (let i = 0;  i < this.series; i++) {
 					const serie = this.dataCoords[i];
 					const len = serie.length;
 					for (let j = 0; j < len; j++) {
 						const point = serie[j];
 						if (x >= point.x && x <= point.x + point.w && y >= point.y && y <= point.y + point.h) {
-							return [i, j];
+							tracedPoints.push({serieIdx: i, pointIdx: j, point});
+							break;
 						}
 					}
+				} // For multiple series, points may be stacked and they are preferred by Y position
+				if (tracedPoints.length) {
+					tracedPoints.sort((a, b) => {return b.point.x - a.point.x + b.point.y - a.point.y});
+					return [tracedPoints[0].serieIdx, tracedPoints[0].pointIdx];
 				}
 		}
 		return [-1, -1];

@@ -23,6 +23,7 @@
 - Series may now have different X-values and be drawn properly. i.e. not all X-keys must be present on every serie. In the case of 'lines' graph types, it will produce discontinuous lines.
 ### Removed
 ### Fixed
+- Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
 - Improved color checking for bad inputs.
 - Improved data checking for bad inputs.
 - Y axis ticks were sometimes not properly set to respect the margins or panel size.
