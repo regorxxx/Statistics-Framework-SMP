@@ -834,10 +834,8 @@ function _chart({
 			const range = Math.abs(slice[1] - slice[0]);
 			for (let i = 0; i < this.dataDraw.length; i++) {
 				const serie = this.dataDraw[i];
-				console.log(serie);
 				for (let j = 0; j < serie.length; j++) {
 					const value = serie[j];
-					console.log(serie[j]);
 					if (!xKeys.has(value.x)) {
 						if (xKeys.size >= range) {
 							this.dataDraw[i] = serie.slice(0, j);
