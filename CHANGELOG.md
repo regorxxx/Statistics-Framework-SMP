@@ -9,12 +9,14 @@
 
 ## [Unreleased][]
 ### Added
+- '09_statistics.js' new example showing a timeline per artist/# tracks.
 - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
 - 'bPopupBackground' configuration variable to display an overlay while loading Async data. Default behavior is false, i.e. only the text and animation is displayed.
 - 'bProfile' configuration variable to enable profiling logging on console.
 - 'bSlicePerKey' configuration variable to force slicing manipulation by total number of x asis keys, instead of values per series. For ex. 2 series may have different X values, resulting on an X axis longer than expected since slicing gets N values per serie, not the values associated to the first N X-keys shared by all series. This is now the default behavior.
 - 'multi' graph variable to display aggregated data per X-value, i.e. effectively displaying 3-dimensional data. For ex. number of tracks (Y) per Artist (Z) per Year (X), where artists will be grouped per year. This type of data is better displayed on bar graphs. Data should be passed with this schema: [[[{x1, y11, z11}, ...],[{x2, y21, z21}, ...], ...]], where a single serie contains multiple X-planes, each one being an array of points with same X-value. The framework will automatically manipulate the data to display the X-points of every X-plane array on different series. In case the X-plane arrays don't have the same number of points, output series may have different length, which is now handled by the 'bSlicePerKey' config above.
 ### Changed
+- Improved chart menus with all new additions and code cleanup.
 - Tooltip now also shows percentages on pie and doughnut modes.
 - Background color can now be set to null to use it as overlay.
 - Better Y axis tick management for auto mode.
