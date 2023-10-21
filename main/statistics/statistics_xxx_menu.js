@@ -1,5 +1,5 @@
 ﻿'use strict';
-//08/09/23
+//19/10/23
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
@@ -25,15 +25,42 @@ function createStatisticsMenu(bClear = true) {
 			if (option.isEq && option.key === option.value || !option.isEq && option.key !== option.value || option.isEq === null) {
 				menu.newEntry({menuName, entryText: option.entryText, func: () => {
 					if (addFunc) {addFunc(option);}
-					if (subKey) {this.changeConfig({[key]: {[subKey]: option.newValue}});}
+					if (subKey) {
+						if (Array.isArray(subKey)) {
+							const len = subKey.length - 1;
+							const obj = {[key]: {}};
+							let prev = obj[key];
+							subKey.forEach((curr, i) => {
+								prev[curr] = i === len ? option.newValue : {};
+								prev = prev[curr];
+							});
+							this.changeConfig(obj);
+						} else {
+							this.changeConfig({[key]: {[subKey]: option.newValue}});
+						}
+					}
 					else {this.changeConfig({[key]: option.newValue});}
 				}});
 				if (bCheck) {
 					menu.newCheckMenu(menuName, option.entryText, void(0), () => {
-						const val = subKey ? this[key][subKey] : this[key];
+						const val = subKey 
+							? Array.isArray(subKey)
+								? subKey.reduce((acc, curr) => acc[curr], this[key])
+								: this[key][subKey] 
+							: this[key];
 						if (option.newValue && typeof option.newValue === 'function') {return !!(val && val.name === option.newValue.name);}
-						if (option.newValue && typeof option.newValue === 'object') {return !!(val && val.toString() === option.newValue.toString());}
-						else {return (val === option.newValue);}
+						if (option.newValue && typeof option.newValue === 'object') {
+							if (Array.isArray(val)) {
+								return !!(val && val.toString() === option.newValue.toString());
+							} else if (val) {
+								const keys = Object.keys(option.newValue);
+								return keys.every((key) => val[key] === option.newValue[key]);
+							}
+						} else {
+							return option.isEq === null && option.value === null && (option.newValue === true || option.newValue === false)
+								? !!val
+								: (val === option.newValue);
+						}
 					});
 				}
 			}
@@ -43,6 +70,8 @@ function createStatisticsMenu(bClear = true) {
 	const sortNat = (a, b) => {return a.y - b.y;};
 	const filtGreat = (num) => {return (a) => {return a.y > num;}};
 	const filtLow = (num) => {return (a) => {return a.y < num;}};
+	const fineGraphs = new Set(['bars', 'doughnut', 'pie']);
+	const sizeGraphs = new Set(['scatter', 'lines']);
 	// Header
 	menu.newEntry({entryText: this.title, flags: MF_GRAYED});
 	menu.newEntry({entryText: 'sep'});
@@ -53,7 +82,11 @@ function createStatisticsMenu(bClear = true) {
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'scatter',		entryText: 'Scatter'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'bars',			entryText: 'Bars'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'lines',			entryText: 'Lines'},
-		].forEach(createMenuOption('graph', 'type', subMenu));
+			{isEq: null,	key: this.graph.type, value: null,				newValue: 'doughnut',		entryText: 'Doughnut'},
+			{isEq: null,	key: this.graph.type, value: null,				newValue: 'pie',			entryText: 'Pie'},
+		].forEach(createMenuOption('graph', 'type', subMenu, void(0), (option) => {
+			this.graph.borderWidth = fineGraphs.has(option.newValue) ? _scale(1) : _scale(4);
+		}));
 	}
 	{
 		const subMenu = menu.newMenu('Distribution...');
@@ -134,6 +167,10 @@ function createStatisticsMenu(bClear = true) {
 		[
 			{isEq: null,	key: this.axis.y.labels, value: null,					newValue: {labels: !this.axis.y.labels},			entryText: (this.axis.y.labels ? 'Hide' : 'Show') + ' Y labels'}
 		].forEach(createMenuOption('axis', 'y', subMenu, false));
+		menu.newEntry({menuName: subMenu, entryText: 'sep'});
+		[
+			{isEq: null,	key: this.axis.x.bAltLabels, value: null,				newValue: !this.axis.x.bAltLabels,		entryText: 'Alt. X labels'},
+		].forEach(createMenuOption('axis', ['x', 'bAltLabels'], subMenu, true));
 	}
 	{
 		const subMenu = menu.newMenu('Color palette...');
@@ -152,14 +189,14 @@ function createStatisticsMenu(bClear = true) {
 		menu.newCheckMenu(subMenu, 'Colorblind safe?', void(0), () => {return this.chroma.colorBlindSafe;});
 	}
 	{
+		const type = this.graph.type.toLowerCase();
 		const subMenu = menu.newMenu('Other config...');
 		{
-			const configSubMenu = menu.newMenu('Point size...', subMenu);
+			const configSubMenu = menu.newMenu((type === 'lines' ? 'Line' : 'Point') + ' size...', subMenu);
 			[1, 2, 3, 4].map((val) => {
 				return {isEq: null,	key: this.graph.borderWidth, value: null, newValue: _scale(val), entryText: val.toString()};
 			}).forEach(createMenuOption('graph', 'borderWidth', configSubMenu));
 		}
-		const type = this.graph.type.toLowerCase();
 		if (type === 'scatter' || type === 'p-p plot') {
 			const configSubMenu = menu.newMenu('Point type...', subMenu);
 			['circle', 'circumference', 'cross', 'triangle', 'plus'].map((val) => {
