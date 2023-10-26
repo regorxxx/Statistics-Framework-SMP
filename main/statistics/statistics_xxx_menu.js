@@ -160,17 +160,38 @@ function createStatisticsMenu(bClear = true) {
 		menu.newEntry({entryText: 'sep'});
 	}
 	{
-		const subMenu = menu.newMenu('Axis...');
-		[
-			{isEq: null,	key: this.axis.x.labels, value: null,					newValue: {labels: !this.axis.x.labels},			entryText: (this.axis.x.labels ? 'Hide' : 'Show') + ' X labels'}
-		].forEach(createMenuOption('axis', 'x', subMenu, false));
-		[
-			{isEq: null,	key: this.axis.y.labels, value: null,					newValue: {labels: !this.axis.y.labels},			entryText: (this.axis.y.labels ? 'Hide' : 'Show') + ' Y labels'}
-		].forEach(createMenuOption('axis', 'y', subMenu, false));
-		menu.newEntry({menuName: subMenu, entryText: 'sep'});
-		[
-			{isEq: null,	key: this.axis.x.bAltLabels, value: null,				newValue: !this.axis.x.bAltLabels,		entryText: 'Alt. X labels'},
-		].forEach(createMenuOption('axis', ['x', 'bAltLabels'], subMenu, true));
+		const subMenu = menu.newMenu('Axis & labels...');
+		{
+			const subMenuTwo = menu.newMenu('Axis...', subMenu);
+			[
+				{isEq: null,	key: this.axis.x.show, value: null,					newValue: {show: !this.axis.x.show},			entryText: (this.axis.x.show ? 'Hide' : 'Show') + ' X axis'}
+			].forEach(createMenuOption('axis', 'x', subMenuTwo, false));
+			[
+				{isEq: null,	key: this.axis.y.show, value: null,					newValue: {show: !this.axis.y.show},			entryText: (this.axis.y.show ? 'Hide' : 'Show') + ' Y axis'}
+			].forEach(createMenuOption('axis', 'y', subMenuTwo, false));
+		}
+		{
+			const subMenuTwo = menu.newMenu('Labels...', subMenu);
+			[
+				{isEq: null,	key: this.axis.x.labels, value: null,					newValue: {labels: !this.axis.x.labels},			entryText: (this.axis.x.labels ? 'Hide' : 'Show') + ' X labels'}
+			].forEach(createMenuOption('axis', 'x', subMenuTwo, false));
+			[
+				{isEq: null,	key: this.axis.y.labels, value: null,					newValue: {labels: !this.axis.y.labels},			entryText: (this.axis.y.labels ? 'Hide' : 'Show') + ' Y labels'}
+			].forEach(createMenuOption('axis', 'y', subMenuTwo, false));
+			menu.newEntry({menuName: subMenuTwo, entryText: 'sep'});
+			[
+				{isEq: null,	key: this.axis.x.bAltLabels, value: null,				newValue: !this.axis.x.bAltLabels,		entryText: 'Alt. X labels'},
+			].forEach(createMenuOption('axis', ['x', 'bAltLabels'], subMenuTwo, true));
+		}
+		{
+			const subMenuTwo = menu.newMenu('Titles...', subMenu);
+			[
+				{isEq: null,	key: this.axis.x.showKey, value: null,					newValue: {showKey: !this.axis.x.showKey},			entryText: (this.axis.x.showKey ? 'Hide' : 'Show') + ' X title'}
+			].forEach(createMenuOption('axis', 'x', subMenuTwo, false));
+			[
+				{isEq: null,	key: this.axis.y.showKey, value: null,					newValue: {showKey: !this.axis.y.showKey},			entryText: (this.axis.y.showKey ? 'Hide' : 'Show') + ' Y title'}
+			].forEach(createMenuOption('axis', 'y', subMenuTwo, false));
+		}
 	}
 	{
 		const subMenu = menu.newMenu('Color palette...');
