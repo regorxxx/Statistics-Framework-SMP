@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/10/23
+//24/10/23
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
@@ -34,17 +34,6 @@ window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.0.0', feat
 function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 	let data;
 	switch (option) {
-		case 'tf': {
-			const handleList = query.length && query !== 'ALL' ? fb.GetQueryItems(fb.GetLibraryItems(), query) : fb.GetLibraryItems();
-			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => {return val.split(',')}).flat(Infinity);
-			const tagCount = new Map();
-			libraryTags.forEach((tag) => {
-				if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
-				else {tagCount.set(tag, tagCount.get(tag) + 1);}
-			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
-			break;
-		}
 		case 'timeline': { // 3D {x, y, z}, x and z can be exchanged
 			const handleList = query.length && query !== 'ALL' ? fb.GetQueryItems(fb.GetLibraryItems(), query) : fb.GetLibraryItems();
 			const xTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => {return val.split(',')});
@@ -70,36 +59,6 @@ function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 			data = [[...dic].map((points) => points[1].map((point) => {return {x: points[0], y: point.count, z: point.key};}))];
 			break;
 		}
-		case 'most played': {
-			const handleList = fb.GetLibraryItems();
-			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
-			const tagCount = new Map();
-			libraryTags.forEach((tag, i) => {
-				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
-				else {tagCount.set(tag, tagCount.get(tag) + Number(playCount[i]));}
-			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
-			break;
-		}
-		case 'most played proportional': {
-			const handleList = fb.GetLibraryItems();
-			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
-			const tagCount = new Map();
-			const keyCount = new Map();
-			libraryTags.forEach((tag, i) => {
-				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
-				else {tagCount.set(tag, tagCount.get(tag) + Number(playCount[i]));}
-				if (!keyCount.has(tag)) {keyCount.set(tag, 1);}
-				else {keyCount.set(tag, keyCount.get(tag) + 1);}
-			});
-			keyCount.forEach((value, key) => {
-				if (tagCount.has(key)) {tagCount.set(key, Math.round(tagCount.get(key) / keyCount.get(key)));}
-			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
-			break;
-		}
 	}
 	return data;
 }
@@ -119,26 +78,27 @@ const defaultConfig = {
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true}, 
-		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true}
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, bAltLabels: true}, 
+		y: {show: false, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true}
 	},
 	x: 0,
 	w: 0,
 	y: 0,
 	h: 0,
 	tooltipText: '\n\n(Right click to configure chart)',
-	configuration: {bSlicePerKey: true}
+	configuration: {bSlicePerKey: true},
+	gFont: _gdiFont('Segoe UI', _scale(12))
 };
 
 const newConfig = [
 	[ // Row
 		{
-			data: getData('timeline', '$year(%date%)', 'DATE GREATER 1970 AND DATE LESS 1980', 'ALBUM ARTIST'),
-			dataManipulation: {sort: (a, b) => {return a.x - b.x;}},
-			graph: {type: 'bars', multi: true, borderWidth: _scale(1)},
+			data: getData('timeline', '$year(%DATE%)', 'ALL', 'ALBUM ARTIST'),
+			dataManipulation: {sort: (a, b) => {return a.x - b.x;}, group: 2},
+			graph: {type: 'timeline', multi: true, borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'date'}, 
-				y: {key: 'tracks'}
+				x: {key: 'Date'}, 
+				y: {key: 'Tracks'}
 			}
 		},
 	]
@@ -186,6 +146,7 @@ function on_size() {
 	window.Repaint();
 }
 
+let prevX = null;
 function on_mouse_move(x, y, mask) {
 	if (!window.ID) {return;}
 	const bFound = charts.some((chart) => {return chart.move(x,y);});
