@@ -1,5 +1,5 @@
 ﻿'use strict';
-//22/08/23
+//24/10/23
 
 /* 
 	helpers_xxx_UI.js 
@@ -148,6 +148,52 @@ function invert(color, bBW = false) {
 }
 
 /* 
+	helpers_xxx_UI_draw.js
+*/
+
+function _sb(t, x, y, w, h, v, fn) {
+	this.paint = (gr, colour) => {
+		gr.SetTextRenderingHint(4);
+		if (this.v()) {
+			gr.DrawString(this.t, this.font, colour, this.x, this.y, this.w, this.h, SF_CENTRE);
+		}
+	};
+	this.trace = (x, y) => {
+		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h && this.v();
+	};
+	this.move = (x, y) => {
+		if (this.trace(x, y)) {
+			window.SetCursor(IDC_HAND);
+			this.hover = true;
+			return true;
+		} else {
+			//window.SetCursor(IDC_ARROW);
+			this.hover = false;
+			return false;
+		}
+	};
+	this.lbtn_up = (x, y) => {
+		if (this.trace(x, y)) {
+			if (this.fn) {
+				this.fn(x, y);
+			}
+			return true;
+		} else {
+			return false;
+		}
+	};
+	this.hover = false;
+	this.t = t;
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	this.v = v;
+	this.fn = fn;
+	this.font = _gdiFont('FontAwesome', this.h);
+}
+
+/* 
 	helpers_xxx_UI_flip.js
 */
 
@@ -203,6 +249,25 @@ for (let i in flipTable) {flipTable[flipTable[i]] = i}
 /* 
 	helpers_xxx_prototypes.js
 */
+function isFunction(obj) {
+	return !!(obj && obj.constructor && obj.call && obj.apply);
+}
+
+// Randomly rearranges the items in an array, modifies original. Fisher-Yates algorithm
+Array.prototype.shuffle = function() {
+	let last = this.length, n;
+	while (last > 0) {
+		n = Math.floor(Math.random() * last--);
+		[this[n], this[last]] = [this[last], this[n]];
+	}
+	return this;
+};
+
+// https://en.wikipedia.org/wiki/Schwartzian_transform
+Array.prototype.schwartzianSort = function (processFunc, sortFunc = (a, b) => a[1] - b[1]) { // or (a, b) => {return a[1].localeCompare(b[1]);}
+	return this.map((x) => [x, processFunc(x)]).sort(sortFunc).map((x) => x[0]);
+}
+
 const range = (start, stop, step) => new Array((stop - start) / step + 1).fill(void(0)).map((_, i) => start + (i * step));
 
 function _p(value) {
@@ -240,6 +305,33 @@ function require(script) {
 	include(newScript + '.js') ;
 	return module.exports;
 }
+
+const debounce = (fn, delay, immediate = false, parent = this) => {
+	let timerId;
+	return (...args) => {
+		const boundFunc = fn.bind(parent, ...args);
+		clearTimeout(timerId);
+		if (immediate && !timerId) {boundFunc();}
+		const calleeFunc = immediate ? () => {timerId = null;} : boundFunc;
+		timerId = setTimeout(calleeFunc, delay);
+		return timerId;
+	};
+};
+
+const throttle = (fn, delay, immediate = false, parent = this) => {
+	let timerId;
+	return (...args) => {
+		const boundFunc = fn.bind(parent, ...args);
+		if (timerId) {return;}
+		if (immediate && !timerId) {boundFunc();}
+		timerId = setTimeout(() => {
+			if(!immediate) {
+				boundFunc(); 
+			}
+			timerId = null; 
+		}, delay);
+	};
+};
 
 /* 
 	helpers_xxx_prototypes_smp.js
