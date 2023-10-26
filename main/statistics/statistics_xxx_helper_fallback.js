@@ -148,6 +148,20 @@ function invert(color, bBW = false) {
 }
 
 /* 
+	helpers_xxx_UI_chars.js
+*/
+
+const chars = {
+	cogs			: '\uf085',
+	chartV2			: '\uf080',
+	// Carets
+	left 			: '\uf053',
+	right 			: '\uf054',
+	up 				: '\uf077',
+	down 			: '\uf078',
+};
+
+/* 
 	helpers_xxx_UI_draw.js
 */
 
