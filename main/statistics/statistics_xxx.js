@@ -1,11 +1,8 @@
 ﻿'use strict';
-//26/10/23
+//30/10/23
 
 include('statistics_xxx_helper.js');
-include('..\\..\\helpers\\popup_xxx.js');
-include('..\\..\\helpers\\helpers_xxx_UI_flip.js');
-include('..\\..\\helpers\\helpers_xxx_UI_draw.js');
-const Chroma = require('..\\helpers-external\\chroma.js-2.4.0\\chroma'); // Relative to helpers folder
+const Chroma = module.exports;
 
 function _chart({
 				data /* [[{x, y}, ...]]*/,
@@ -16,7 +13,7 @@ function _chart({
 				dataManipulation = {/* sort, filter, slice, distribution , probabilityPlot, group*/},
 				background = {/* color, image*/},
 				grid = {x: {/* show, color, width */}, y: {/* ... */}},
-				axis = {x: {/* show, color, width, ticks, labels, key, singleLabels, bAltLabels/}, y: {/* ... */}}, // singleLabels & bAltLabels only for X axis
+				axis = {x: {/* show, color, width, ticks, labels, key, singleLabels, bAltLabels */}, y: {/* ... */}, z: {/* ... */}}, // singleLabels & bAltLabels only for X axis
 				margin = {/* left, right, top, bottom */}, 
 				buttons = {/* xScroll , settings, display */},
 				callbacks = {point: {/* onLbtnUp, onRbtnUp */}, focus: {/* onMouseWwheel, onRbtnUp */}, settings: {/* onLbtnUp, onRbtnUp */}, display: {/* onLbtnUp, onRbtnUp */}},
@@ -267,6 +264,7 @@ function _chart({
 	this.paintGraph = (gr) => {
 		this.dataCoords = this.dataDraw.map((serie) => {return [];});
 		let x, y, w, h, xOffsetKey, yOffsetKey;
+		let bHideToolbar;
 		
 		// Max Y value for all series
 		let maxY = 0, minY = 0;
@@ -389,10 +387,10 @@ function _chart({
 				gr.SetSmoothingMode(4); // Antialias for lines
 				const len = this.dataDraw.length - 1;
 				if (len > 0) { // Paint first the line, then the points
-					this.paintLines(gr, this.dataDraw[len], len, x, y, w, h, maxY, tickW, last);
+					this.paintLines(gr, this.dataDraw[len], len, x, y, w, h, maxY, tickW, last, xAxisValues);
 					for (let i = 0; i < len; i++) {
 						const serie = this.dataDraw[i];
-						this.paintScatter(gr, serie, i, x, y, w, h, maxY, tickW);
+						this.paintScatter(gr, serie, i, x, y, w, h, maxY, tickW, xAxisValues);
 					}
 				}
 				gr.SetSmoothingMode(0);
@@ -650,6 +648,8 @@ function _chart({
 												valueZ = valueZ.cut(Math.floor((topMax - this.axis.x.width)/ (wPerChar) - 3 ));
 											}
 										} else {valueZ = valueZ.cut(1);}
+									} else {
+										if (this.hasToolbar && (zLabel + keyH) >= this.buttonsCoords.x()) {bHideToolbar = true;}
 									}
 									_gr.SetTextRenderingHint(TextRenderingHint.SingleBitPerPixelGridFit);
 									_gr.DrawString(valueZ, this.gFont, RGBA(...toRGB(this.axis.x.color), 255), 0 ,0, topMax, keyH, StringFormatFlags.NoWrap);
@@ -759,23 +759,20 @@ function _chart({
 					});
 				}
 		}
+		return {bHideToolbar};
 	};
 	
-	this.paintButtons = (gr) => {
+	this.paintButtons = (gr, bHideToolbar = false) => {
+		const color = axis.x.color;
+		const bPoint = !!this.getCurrentPoint();
 		if (this.buttons.xScroll) {
-			if (!this.leftBtn.hover) {this.leftBtn.paint(gr, axis.x.color);}
-			if (!this.rightBtn.hover) {this.rightBtn.paint(gr, axis.x.color);}
-			
-			this.leftBtn.paint(gr, !this.leftBtn.hover ? RGBA(...toRGB(invert(axis.x.color, true)), getBrightness(...toRGB(axis.x.color)) < 50 ? 150 : 25) : axis.x.color);
-			this.rightBtn.paint(gr, !this.rightBtn.hover ? RGBA(...toRGB(invert(axis.x.color, true)), getBrightness(...toRGB(axis.x.color)) < 50 ? 150 : 25) : axis.x.color);
+			this.leftBtn.paint(gr, color);
+			this.rightBtn.paint(gr, color);
 		}
-		if (this.buttons.settings) {
-			if (!this.settingsBtn.hover) {this.settingsBtn.paint(gr, axis.x.color);}
-			this.settingsBtn.paint(gr, !this.settingsBtn.hover ? RGBA(...toRGB(invert(axis.x.color, true)), getBrightness(...toRGB(axis.x.color)) < 50 ? 150 : 25) : axis.x.color);
-		}
-		if (this.buttons.display) {
-			if (!this.displayBtn.hover) {this.displayBtn.paint(gr, axis.x.color);}
-			this.displayBtn.paint(gr, !this.displayBtn.hover ? RGBA(...toRGB(invert(axis.x.color, true)), getBrightness(...toRGB(axis.x.color)) < 50 ? 150 : 25) : axis.x.color);
+		// Toolbar
+		if (!bHideToolbar) {
+			if (this.buttons.settings) {this.settingsBtn.paint(gr, color);}
+			if (this.buttons.display) {this.displayBtn.paint(gr, color);}
 		}
 	}
 	
@@ -785,10 +782,10 @@ function _chart({
 		if (this.configuration.bProfile) {this.profile.Reset();}
 		this.paintBg(gr);
 		if (this.configuration.bProfile) {this.profile.Print('Paint background', false);}
-		this.paintGraph(gr);
+		const {bHideToolbar} = this.paintGraph(gr);
 		if (this.configuration.bProfile) {this.profile.Print('Paint graph', false);}
+		this.paintButtons(gr, bHideToolbar);
 		this.pop.paint(gr);
-		this.paintButtons(gr);
 	};
 	
 	this.repaint = () => {
@@ -922,11 +919,13 @@ function _chart({
 		if (this.trace(x,y)) {
 			let bHand = false;
 			let bPaint = false;
+			let ttText = '';
 			if (this.buttons.xScroll) {
 				const bHover = this.leftBtn.hover || this.rightBtn.hover;
 				if (this.leftBtn.move(x, y) || this.rightBtn.move(x, y)) {
 					bHand = true;
 					bPaint = true;
+					ttText = 'Click to scroll on X-axis...';
 				} else if ((this.leftBtn.hover || this.rightBtn.hover) !== bHover) {bPaint = true;}
 			}
 			if (this.buttons.settings) {
@@ -934,6 +933,7 @@ function _chart({
 				if (this.settingsBtn.move(x, y)) {
 					bHand = true;
 					bPaint = true;
+					ttText = 'Main settings...';
 				} else if (this.settingsBtn.hover !== bHover) {bPaint = true;}
 			}
 			if (this.buttons.display) {
@@ -941,6 +941,7 @@ function _chart({
 				if (this.displayBtn.move(x, y)) {
 					bHand = true;
 					bPaint = true;
+					ttText = 'Display settings...';
 				} else if (this.displayBtn.hover !== bHover) {bPaint = true;}
 			}
 			this.mx = x;
@@ -959,15 +960,13 @@ function _chart({
 					const point = serieData[idx];
 					const bPercent = this.graph.type === 'doughnut' || this.graph.type === 'pie';
 					const percent = bPercent ? Math.round(point.y * 100 / serieData.reduce((acc, point) => acc + point.y, 0)) : null;
-					this.tooltip.SetValue(
-						point.x + ': ' + point.y + (this.axis.y.key ?  ' ' + this.axis.y.key : '') +
+					ttText = point.x + ': ' + point.y + (this.axis.y.key ?  ' ' + this.axis.y.key : '') +
 						(bPercent ? ' ' + _p(percent + '%') : '') +
 						(point.hasOwnProperty('z') ? ' - ' + point.z : '') +
-						(this.tooltipText && this.tooltipText.length ? tooltipText : '')
-					, true);
-				} else {
-					this.tooltip.SetValue(null);
+						(this.tooltipText && this.tooltipText.length ? tooltipText : '');
 				}
+				if (ttText.length) {this.tooltip.SetValue(ttText, true);}
+				else {this.tooltip.SetValue(null);}
 				window.SetCursor(bHand ? IDC_HAND : IDC_ARROW);
 				return true;
 			}
@@ -1041,6 +1040,7 @@ function _chart({
 		let left, right;
 		if (typeof x === 'undefined') {
 			[left, right] = [currSlice[0] + step, currSlice[1] + step];
+			if (right === Infinity && Number.isFinite(step)) {right = points + step;}
 		} else if (typeof step === 'undefined') {
 			[left, right] = this.calcScrollSlice(x, currSlice, points);
 			prevX = x;
@@ -1048,7 +1048,10 @@ function _chart({
 		} else {return false;}
 		if (!left && !right) {return false;}
 		if (currSlice[0] === left || currSlice[1] === right) {return false;}
-		if (right > points) {return false;}
+		if (right > points) {
+			if (currSlice[1] !== points && currSlice[1] !== Infinity) {right = points;}
+			else {return false;}
+		}
 		if (left < 0) {return false;}
 		this.changeConfig({bPaint: true, dataManipulation: {slice: [left, right === points ? Infinity : right]}});
 		this.move(this.mx, this.my);
@@ -1092,18 +1095,52 @@ function _chart({
 	};
 	this.zoomXThrottle = throttle(this.zoomX, 30);
 	
-	this.resize = (x, y, w, h) => {
-		this.leftBtn.x = this.x + Math.round((this.w - _scale(12)) / 2);
-		this.leftBtn.y = this.y + _scale(1);
-		this.rightBtn.x = this.x + Math.round((this.w - _scale(12)) / 2);
-		this.rightBtn.y = this.y + _scale(1);
-		this.settingsBtn.x = this.x + Math.round((this.w - _scale(12)) / 2);
-		this.settingsBtn.y = this.y + _scale(1);
-		this.displayBtn.x = this.x + Math.round((this.w - _scale(12)) / 2);
-		this.displayBtn.y = this.y + _scale(1);
-		this,changeConfig({x, y, w, h, bPaint: false});
+	this.hasToolbar = false;
+	this.buttonsCoords = {x: () => this.x + this.w - _scale(26), y: () => this.y + _scale(12), size: _scale(24)};
+	this.resizeButtons = () => {
+		this.leftBtn.x = this.x;
+		this.leftBtn.y = (this.y + this.h) / 2;
+		this.leftBtn.w = this.buttonsCoords.size / 2;
+		this.rightBtn.x = this.x + this.w - this.rightBtn.w;
+		this.rightBtn.y =  (this.y + this.h) / 2;
+		this.rightBtn.w = this.buttonsCoords.size / 2;
+		// Toolbar
+		let i = 0;
+		Object.keys(this.buttons).forEach((label) => {
+			const key = label + 'Btn';
+			if (this.hasOwnProperty(key) && this.buttons[label]) {
+				this[key].x = this.buttonsCoords.x();
+				this[key].y = this.buttonsCoords.y() + i * this.buttonsCoords.size;
+				this[key].w = this[key].h = this.buttonsCoords.size;
+				this.hasToolbar = true;
+				i++;
+			}
+		});
 	}
 	
+	this.resize = (x, y, w, h, bRepaint = true) => {
+		this.x = x; 
+		this.y = y; 
+		this.w = w;
+		this.h = h;
+		this.resizeButtons();
+		this.pop.x = this.x;
+		this.pop.y = this.y;
+		this.pop.resize(this.w, this.pop.h);
+		this.pop.resize(this.pop.w, this.h - this.y);
+		if (bRepaint) {this.repaint();}
+	}
+	
+	this.lbtnDown = (x, y, mask) => {
+		if (this.trace(x,y)) {
+			if (this.buttons.xScroll) {
+				if (this.leftBtn.lbtn_down(x, y, mask, this) || this.rightBtn.lbtn_down(x, y, mask, this)) {return true;}
+			}
+			return true;
+		}
+		return false;
+	}
+
 	this.lbtnUp = (x, y, mask) => {
 		if (this.trace(x,y)) {
 			if (this.buttons.xScroll) {
@@ -1437,16 +1474,16 @@ function _chart({
 		if (axis) {
 			if (axis.x) {this.axis.x = {...this.axis.x, ...axis.x};}
 			if (axis.y) {this.axis.y = {...this.axis.y, ...axis.y};}
+			if (axis.z) {this.axis.z = {...this.axis.z, ...axis.z};}
 		}
 		if (grid) {
 			if (grid.x) {this.grid.x = {...this.grid.x, ...grid.x};}
 			if (grid.y) {this.grid.y = {...this.grid.y, ...grid.y};}
 		}
 		if (margin) {this.margin = {...this.margin, ...margin};}
-		if (typeof x !== 'undefined') {this.x = x; this.pop.x = x;}
-		if (typeof y !== 'undefined') {this.y = y; this.pop.y = y;}
-		if (typeof w !== 'undefined') {this.w = w; this.pop.resize(w, this.pop.h);}
-		if (typeof h !== 'undefined') {this.h = h; this.pop.resize(this.pop.w, h - this.y);}
+		if ([x, y, w, h].some((n) => typeof n !== 'undefined')) {
+			this.resize(typeof x !== 'undefined' ? x : this.x, typeof y !== 'undefined' ? y : this.y, typeof w !== 'undefined' ? w : this.w, typeof h !== 'undefined' ? h : this.h, false);
+		}
 		if (title) {this.title = title;}
 		if (configuration) {
 			for (let key in configuration) {
@@ -1585,6 +1622,9 @@ function _chart({
 		const pPlot = this.dataManipulation.probabilityPlot ? this.dataManipulation.probabilityPlot.toLowerCase() : null;
 		const dist = this.dataManipulation.distribution ? this.dataManipulation.distribution.toLowerCase() : null;
 		let bPass = true;
+		if (!this.graph.multi) {
+			this.axis.z = {};
+		}
 		if (this.dataManipulation.sort && dist && dist !== 'none') {
 			console.log('Statistics: sort can not be set while using a distribution.');
 			bPass = false;
@@ -1617,11 +1657,23 @@ function _chart({
 					case 'string natural':
 						this.dataManipulation.sort = (a, b) => {return a.x.localeCompare(b.x);}
 						break;
-					case 'string invert':
+					case 'string reverse':
 						this.dataManipulation.sort = (a, b) => {return 0 - a.x.localeCompare(b.x);}
 						break;
 					case 'random':
 						this.dataManipulation.sort = Array.prototype.shuffle;
+						break;
+					case 'radix':
+						this.dataManipulation.sort = Array.prototype.radixSort;
+						break;
+					case 'radix reverse':
+						this.dataManipulation.sort = [Array.prototype.radixSort, true];
+						break;
+					case 'radix int':
+						this.dataManipulation.sort = Array.prototype.radixSortInt;
+						break;
+					case 'radix int reverse':
+						this.dataManipulation.sort = [Array.prototype.radixSortInt, true];
 						break;
 					default:
 						console.log('Statistics: sort name ' + _p(this.dataManipulation.sort) + ' not recognized.');
@@ -1636,6 +1688,12 @@ function _chart({
 					if (typeof this.dataManipulation.sort[0] === 'string') {
 						if (['schwartzian transform', 'schwartzian'].includes(this.dataManipulation.sort[0].toLowerCase())) {
 							this.dataManipulation.sort[0] = Array.prototype.schwartzianSort;
+						} else if (['radix reverse', 'radix'].includes(this.dataManipulation.sort[0].toLowerCase())) {
+							if (this.dataManipulation.sort[0].toLowerCase() === 'radix reverse') {this.dataManipulation.sort[1] = true;}
+							this.dataManipulation.sort[0] = Array.prototype.radixSort;
+						} else if (['radix int reverse', 'radix int'].includes(this.dataManipulation.sort[0].toLowerCase())) {
+							if (this.dataManipulation.sort[0].toLowerCase() === 'radix int reverse') {this.dataManipulation.sort[1] = true;}
+							this.dataManipulation.sort[0] = Array.prototype.radixSortInt;
 						} else {
 							console.log('Statistics: sort name' + _p(this.dataManipulation.sort[0]) + ' not recognized');
 							bPass = false;
@@ -1664,7 +1722,7 @@ function _chart({
 			dataManipulation: {...this.dataManipulation},
 			background: {...this.background},
 			grid:	{x: {...this.grid.x},  y: {...this.grid.y}},
-			axis:	{x: {...this.axis.x},  y: {...this.axis.y}},
+			axis:	{x: {...this.axis.x},  y: {...this.axis.y},  z: {...this.axis.z}},
 			margin: {...this.margin},
 			buttons:{...this.buttons},
 			configuration: {...this.configuration},
@@ -1684,7 +1742,7 @@ function _chart({
 		this.cleanPoints();
 		// Missing colors
 		this.checkScheme();
-		if (this.data.length) {this.checkColors();}
+		if (this.data && this.data.length) {this.checkColors();}
 	}
 	
 	this.initDataAsync = () => {
@@ -1704,6 +1762,7 @@ function _chart({
 		this.background.imageGDI = this.background.image ? gdi.Image(this.background.image) : null;
 		this.checkConfig();
 		this.initData();
+		this.resizeButtons();
 		if (this.configuration.bLoadAsyncData && this.dataAsync) {this.initDataAsync();} // May be managed by the chart or externally
 	};
 	
@@ -1715,8 +1774,9 @@ function _chart({
 		this.background = {color: RGB(255 , 255, 255), image: null};
 		this.grid = {x: {show: false, color: RGB(0,0,0), width: _scale(1)}, y: {show: false, color: RGB(0,0,0), width: _scale(1)}};
 		this.axis = {
-				x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, singleLabels: true, key: '', showKey: true, bAltLabels: false},
-				y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 10, labels: true, key: 'tracks', showKey: true}
+			x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, singleLabels: true, key: '', showKey: true, bAltLabels: false, tf: ''},
+			y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 10, labels: true, key: 'tracks', showKey: true, tf: ''},
+			z: {key: '', tf: ''},
 		};
 		this.margin = {left: _scale(20), right: _scale(20), top: _scale(20), bottom: _scale(20)};
 		this.buttons = {xScroll: false, settings: false, display: false};
@@ -1741,6 +1801,7 @@ function _chart({
 	if (axis) {
 		if (axis.x) {this.axis.x = {...this.axis.x, ...axis.x};}
 		if (axis.y) {this.axis.y = {...this.axis.y, ...axis.y};}
+		if (axis.z) {this.axis.z = {...this.axis.z, ...axis.z};}
 	}
 	if (grid) {
 		if (grid.x) {this.grid.x = {...this.grid.x, ...grid.x};}
@@ -1767,22 +1828,48 @@ function _chart({
 	this.title = typeof title !== 'undefined' ? title : window.Name + ' {' + this.axis.x.key + ' - ' + this.axis.y.key + '}';
 	this.tooltipText = tooltipText;
 	this.configuration = {...this.configuration, ...(configuration || {})};
-	this.leftBtn = new _sb(chars.left, this.x, (this.y + this.h) / 2, _scale(12), _scale(12), () => {return this.inFocus;}, () => {this.scrollX({step: -1, bThrottle: true});});
-	this.rightBtn = new _sb(chars.right, this.x + this.w - _scale(12), (this.y + this.h) / 2, _scale(12), _scale(12), () => {return this.inFocus;}, () => {this.scrollX({step: 1, bThrottle: true});});
-	this.settingsBtn = new _sb(chars.cogs, this.x + this.w - _scale(26), this.y + _scale(12), _scale(24), _scale(24), () => {return this.inFocus;}, function (x, y, mask) {
-		if (mask === MK_RBUTTON && this.callbacks.settings.onRbtnUp) {
-			this.callbacks.settings.onRbtnUp.call(this, x, y);
-		} else if (mask === MK_LBUTTON && this.callbacks.settings.onLbtnUp) {
-			this.callbacks.settings.onLbtnUp.call(this, x, y);
-		}
+	this.leftBtn = new _button({
+		text: chars.left, 
+		x: this.x, y: this.y, w: this.buttonsCoords.size / 2, h: this.buttonsCoords.size / 2, 
+		isVisible: (time, timer) => {return this.inFocus || (Date.now() - time < timer);},
+		notVisibleMode: 25, bTimerOnVisible: true, 
+		scrollSteps: 1, scrollSpeed: 250,
+		lbtnFunc: (x, y, mask, parent, delta = 1) => {this.scrollX({step: - Math.round(delta), bThrottle: false});}
 	});
-	this.displayBtn = new _sb(chars.chartV2, this.x + this.w - _scale(26), this.y + _scale(36), _scale(24), _scale(24), () => {return this.inFocus;}, function (x, y, mask) {
-		if (mask === MK_RBUTTON && this.callbacks.display.onRbtnUp) {
-			this.callbacks.display.onRbtnUp.call(this, x, y);
-		} else if (mask === MK_LBUTTON && this.callbacks.display.onLbtnUp) {
-			this.callbacks.display.onLbtnUp.call(this, x, y);
-		}
+	this.rightBtn  = new _button({
+		text: chars.right, 
+		x: this.x, y: this.y, w: this.buttonsCoords.size / 2, h: this.buttonsCoords.size / 2, 
+		isVisible: (time, timer) => {return this.inFocus || (Date.now() - time < timer);},
+		notVisibleMode: 25, bTimerOnVisible: true,
+		scrollSteps: 1, scrollSpeed: 250,
+		lbtnFunc: (x, y, mask, parent, delta = 1) => {this.scrollX({step: Math.round(delta), bThrottle: false});}
 	});
+ 	this.settingsBtn = new _button({
+		text: chars.cogs,
+		x: this.x, y: this.y, w: this.buttonsCoords.size, h: this.buttonsCoords.size, 
+		isVisible: (time, timer) => {return this.inFocus || (Date.now() - time < timer);},
+		notVisibleMode: 25, bTimerOnVisible: true,
+		lbtnFunc: (x, y, mask, parent) => {
+			if (mask === MK_RBUTTON && this.callbacks.settings.onRbtnUp) {
+				this.callbacks.settings.onRbtnUp.call(this, x, y);
+			} else if (mask === MK_LBUTTON && this.callbacks.settings.onLbtnUp) {
+				this.callbacks.settings.onLbtnUp.call(this, x, y);
+			}
+		}
+	})
+ 	this.displayBtn = new _button({
+		text: chars.chartV2,
+		x: this.x, y: this.y, w: this.buttonsCoords.size, h: this.buttonsCoords.size, 
+		isVisible: (time, timer) => {return this.inFocus || (Date.now() - time < timer);},
+		notVisibleMode: 25, bTimerOnVisible: true,
+		lbtnFunc: (x, y, mask, parent) => {
+			if (mask === MK_RBUTTON && this.callbacks.display.onRbtnUp) {
+				this.callbacks.display.onRbtnUp.call(this, x, y);
+			} else if (mask === MK_LBUTTON && this.callbacks.display.onLbtnUp) {
+				this.callbacks.display.onLbtnUp.call(this, x, y);
+			}
+		}
+	})
 	/* 
 	Animation
 	*/
