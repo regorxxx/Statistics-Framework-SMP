@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/10/23
+//30/10/23
 
 /* 
 	helpers_xxx_UI.js 
@@ -13,11 +13,11 @@ const colorbrewer = {
 	diverging: ['Spectral','RdYlGn','RdBu','PiYG','PRGn','RdYlBu','BrBG','RdGy','PuOr'],
 	qualitative: ['Set2','Accent','Set1','Set3','Dark2','Paired','Pastel2','Pastel1'],
 	sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn'],
-	colorBlind: [
+	colorBlind: {
 		diverging: ['RdBu','PiYG','PRGn','RdYlBu','BrBG','PuOr'],
 		qualitative: ['Set2','Dark2','Paired'],
 		sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn']
-	}]
+	}
 }
 
 // Cache
@@ -138,6 +138,10 @@ function isDark(r, g, b) {
 	return (getBrightness(r,g,b) < 186);
 }
 
+function opaqueColor(color, percent) {
+	return RGBA(...toRGB(color), Math.min(255, 255 * (percent / 100)));
+}
+
 function invert(color, bBW = false) {
 	const [r, g, b] = [getRed(color), getGreen(color), getBlue(color)];
 	if (bBW) {
@@ -160,52 +164,6 @@ const chars = {
 	up 				: '\uf077',
 	down 			: '\uf078',
 };
-
-/* 
-	helpers_xxx_UI_draw.js
-*/
-
-function _sb(t, x, y, w, h, v, fn) {
-	this.paint = (gr, colour) => {
-		gr.SetTextRenderingHint(4);
-		if (this.v()) {
-			gr.DrawString(this.t, this.font, colour, this.x, this.y, this.w, this.h, SF_CENTRE);
-		}
-	};
-	this.trace = (x, y) => {
-		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h && this.v();
-	};
-	this.move = (x, y) => {
-		if (this.trace(x, y)) {
-			window.SetCursor(IDC_HAND);
-			this.hover = true;
-			return true;
-		} else {
-			//window.SetCursor(IDC_ARROW);
-			this.hover = false;
-			return false;
-		}
-	};
-	this.lbtn_up = (x, y) => {
-		if (this.trace(x, y)) {
-			if (this.fn) {
-				this.fn(x, y);
-			}
-			return true;
-		} else {
-			return false;
-		}
-	};
-	this.hover = false;
-	this.t = t;
-	this.x = x;
-	this.y = y;
-	this.w = w;
-	this.h = h;
-	this.v = v;
-	this.fn = fn;
-	this.font = _gdiFont('FontAwesome', this.h);
-}
 
 /* 
 	helpers_xxx_UI_flip.js
@@ -258,7 +216,7 @@ const flipTable = {
 	'\u2234' : '\u2235',
 	'\r' : '\n' 
 }
-for (let i in flipTable) {flipTable[flipTable[i]] = i}
+for (let i in flipTable) {flipTable[flipTable[i]] = i;}
 
 /* 
 	helpers_xxx_prototypes.js
@@ -277,12 +235,54 @@ Array.prototype.shuffle = function() {
 	return this;
 };
 
+Array.prototype.radixSort = function(bInvert) {
+	function getDigit(num, place) {
+		return Math.floor(Math.abs(num) / Math.pow(10, place)) % 10;
+	}
+	const maxDigitCount = this.reduce((acc, num) => {
+		return Math.max(acc,
+			num === 0 
+				? 1 
+				: Math.floor(Math.log10(Math.abs(num))) + 1
+		);
+	}, 0);
+	const len = this.length;
+	for (let k = 0; k < maxDigitCount; k++) {
+		let digitBuckets = Array.from({length: 10}, () => []) // [[], [], [],...]
+		for (let i = 0; i < this.length; i++) {
+			const digit = bInvert ? 9 - getDigit(this[i], k) : getDigit(this[i], k);
+			digitBuckets[digit].push(this[i]);
+		}
+		// New order after each loop
+		this.length = 0;
+		digitBuckets.forEach((arr) => this.push.apply(this, arr));
+	}
+	return this;
+}
+
 // https://en.wikipedia.org/wiki/Schwartzian_transform
 Array.prototype.schwartzianSort = function (processFunc, sortFunc = (a, b) => a[1] - b[1]) { // or (a, b) => {return a[1].localeCompare(b[1]);}
 	return this.map((x) => [x, processFunc(x)]).sort(sortFunc).map((x) => x[0]);
 }
 
-const range = (start, stop, step) => new Array((stop - start) / step + 1).fill(void(0)).map((_, i) => start + (i * step));
+const range = (start, stop, step) => new Array(Math.round((stop - start) / step + 1)).fill(void(0)).map((_, i) => start + (i * step));
+
+// Adds/subtracts 'offset' to 'reference' considering the values must follow cyclic logic within 'limits' range (both values included)
+// Ex: [1,8], x = 5 -> x + 4 = 1 <=> cyclicOffset(5, 4, [1,8])
+function cyclicOffset(reference, offset, limits) {
+		if (offset && reference >= limits[0] && reference <= limits[1]) {
+			reference += offset;
+			if (reference < limits[0]) {reference += limits[1];}
+			if (reference > limits[1]) {reference -= limits[1];}
+		}
+		return reference;
+}
+
+const cutRegex = {};
+String.prototype.cut = function cut(c) {
+	if (!cutRegex.hasOwnProperty(c)) {cutRegex[c] = new RegExp('^(.{' + c + '}).{2,}', 'g');}
+	return this.replace(cutRegex[c], '$1…');
+};
 
 function _p(value) {
 	return '(' + value + ')';
@@ -293,11 +293,19 @@ function _b(value) {
 }
 
 function _t(tag) {
-	return '%' + tag + '%';
+	return tag.indexOf('%') !== -1 ? tag : '%' + tag + '%';
 }
 
 function _bt(tag) {
 	return _b(_t(tag));
+}
+
+function _qCond(tag, bUnquote = false) {
+	return bUnquote 
+		? tag.replace(/(^")(?:.*\$+.*)("$)/g, '') 
+		: tag.includes('$') 
+			? _q(tag)
+			: tag;
 }
 
 function round(floatnum, decimals, eps = 10**-14){
@@ -315,8 +323,11 @@ function round(floatnum, decimals, eps = 10**-14){
 let module = {}, exports = {};
 module.exports = null;
 
-function require(script) {
-	include(newScript + '.js') ;
+function require(script) { // Must be path relative to this file, not the parent one
+	let newScript = script;
+	['helpers-external', 'main', 'examples', 'buttons'].forEach((folder) => {newScript.replace(new RegExp('^\.\\\\' + folder + '\\\\', 'i'), '..\\' + folder + '\\');});
+	['helpers'].forEach((folder) => {newScript.replace(new RegExp('^\.\\\\' + folder + '\\\\', 'i'), '');});
+	include(newScript + '.js');
 	return module.exports;
 }
 
@@ -389,4 +400,161 @@ FbTitleFormat.prototype.EvalWithMetadbsAsync = function EvalWithMetadbsAsync(han
 		that.Expression = arguments[0];
 		return that;
 	}
+}
+
+/* 
+	window_xxx_button.js
+*/
+function _button({
+			text = '',
+			x, y, w, h,
+			isVisible = (time, timer) => this.hover || Date.now() - time < (timer || this.timer),
+			notVisibleMode = 'invisible', // invisible | alpha
+			lbtnFunc = () => void(0),
+			lbtnDblFunc = () => void(0),
+			rbtnFunc = () => void(0),
+			scrollSpeed = 60, // ms
+			scrollSteps = 3, // ms
+			timer = 1500, // ms
+			bTimerOnVisible = false, // ms
+			tt = ''
+		} = {}) {
+	this.paint = (gr, color) => {
+		if (this.w <= 0) {return;} 
+		// Smooth visibility switch
+		let bLastStep = false;
+		if (this.isVisible && !this.isVisible(this.time, this.timer)) {
+			if (this.bVisible) {
+				this.bVisible = false;
+			} else {
+				switch (this.notVisibleMode) {
+					case 'invisible': return;
+					default: {
+						color = RGBA(...toRGB(color), this.notVisibleMode);
+						bLastStep = true;
+					}
+				}
+			}
+		}
+		if (!this.hover) {color = RGBA(...toRGB(color), getBrightness(...toRGB(color)) < 50 ? 100 : 25);}
+		gr.SetTextRenderingHint(4);
+		gr.DrawString(this.text, this.font, color, this.x, this.y, this.w, this.h, SF_CENTRE);
+		gr.SetTextRenderingHint(0);
+		if (!bLastStep && this.isVisible) {this.repaint(this.timer);} // Smooth visibility switch
+	};
+	const debounced = {
+		[this.timer]: debounce(window.RepaintRect, this.timer, false, window)
+	}
+	this.repaint = (timeout = 0) => {
+		if (timeout === 0) {window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);}
+		else {
+			if (!debounced.hasOwnProperty(timeout)) {debounced[timeout] = debounce(window.RepaintRect, timeout, false, window)}
+			debounced[timeout](this.x, this.y, this.x + this.w, this.y + this.h, true);
+		}
+	}
+	this.trace = (x, y) => {
+		return x > this.x && x < this.x + this.w && y > this.y && y < this.y + this.h && this.isVisible();
+	};
+	this.move = (x, y) => {
+		if (this.trace(x, y)) {
+			this.time = Date.now();
+			window.SetCursor(IDC_HAND);
+			this.hover = true;
+			if (this.hover && this.tt) {
+				if (this.tooltip.Text) {this.tooltip.Deactivate();}
+				this.tooltip.SetValue(this.tt, true);
+			}
+			return true;
+		} else {
+			if (this.tooltip.Text) {this.tooltip.SetValue(null);}
+			if (this.bTimerOnVisible && this.isVisible()) {this.time = Date.now();}
+			//window.SetCursor(IDC_ARROW);
+			this.hover = this.bDown = false;
+			return false;
+		}
+	};
+	let downFunc = null;
+	let draggingTime = 0;
+	this.lbtn_down = (x, y, mask, parent) => {
+		if (!this.scrollSpeed) {return false;}
+		if (this.trace(x, y)) {
+			this.bHover = true;
+			if (this.bHover) {
+				this.bDown = true;
+				draggingTime = 0;
+				downFunc = setInterval(() => {
+					if (this.bDown) {
+						const delta = 1 + (draggingTime > this.scrollSpeed * 3 ? Math.log(draggingTime / this.scrollSpeed)* this.scrollSteps : 0);
+						console.log('lbtn_down', draggingTime, Math.round(delta));
+						this.lbtnFunc.call(parent, x, y, mask, parent, delta);
+						this.repaint();
+					}
+					draggingTime += this.scrollSpeed;
+				}, this.scrollSpeed);
+			}
+			this.repaint();
+			return true;
+		} else { 
+			this.bHover = this.bDown = false;
+		}
+		return false;
+	};
+	this.lbtn_up = (x, y, mask, parent) => {
+		this.bDown = false;
+		if (downFunc) {clearInterval(downFunc); downFunc = null; draggingTime = 0;}
+		if (this.trace(x, y)) {
+			if (this.lbtnFunc) {
+				if (parent) {
+					this.lbtnFunc.call(parent, x, y, mask, parent, 1);
+				} else {
+					this.lbtnFunc(x, y, mask);
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	};
+	this.rbtn_up = (x, y, mask, parent) => {
+		if (this.trace(x, y)) {
+			if (this.rbtnFunc) {
+				if (parent) {
+					this.rbtnFunc.call(parent, x, y, mask, parent);
+				} else {
+					this.rbtnFunc(x, y, mask);
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	};
+	this.lbtn_dblclk = (x, y) => {
+		if (this.trace(x, y)) {
+			if (!this.hover || !this.isVisible()) {return false;}
+			else if (this.dblclkFunc) {this.lbtnDblFunc(x, y, mask);}
+			return true;
+		}
+		return false;
+	};
+	this.hover = false;
+	this.bDown = false;
+	this.text = text;
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.h = h;
+	this.isVisible = isVisible;
+	this.notVisibleMode = notVisibleMode;
+	this.bTimerOnVisible = bTimerOnVisible;
+	this.bVisible = true;
+	this.lbtnFunc = lbtnFunc;
+	this.lbtnDblFunc = lbtnDblFunc;
+	this.tt = tt;
+	this.font = _gdiFont('FontAwesome', this.h);
+	this.tooltip = new _tt(null, void(0), void(0), 600);
+	this.time = Date.now();
+	this.timer = timer;
+	this.scrollSpeed = scrollSpeed;
+	this.scrollSteps = scrollSteps;
 }

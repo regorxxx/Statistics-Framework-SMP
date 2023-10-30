@@ -10,7 +10,11 @@
 		include('..\\..\\helpers\\helpers_xxx_UI_flip.js');
 		include('..\\..\\helpers\\helpers_xxx.js');
 		include('..\\..\\helpers\\helpers_xxx_prototypes.js');
+		include('..\\window\\window_xxx_button.js');
+		require('..\\helpers-external\\chroma.js-2.4.0\\chroma'); // Relative to helpers folder
 	} else {
 		include('statistics_xxx_helper_fallback.js');
+		require('..\\..\\helpers-external\\chroma.js-2.4.0\\chroma'); // Relative to helpers folder
 	}
+	include('..\\..\\helpers\\popup_xxx.js');
 }
