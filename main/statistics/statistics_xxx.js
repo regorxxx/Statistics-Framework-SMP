@@ -1651,7 +1651,7 @@ function _chart({
 					case 'natural':
 						this.dataManipulation.sort = (a, b) => {return a.x - b.x;};
 						break;
-					case 'invert':
+					case 'reverse':
 						this.dataManipulation.sort = (a, b) => {return b.x - a.x;};
 						break;
 					case 'string natural':
