@@ -9,6 +9,7 @@
 
 ## [Unreleased][]
 ### Added
+- 'graph.pointAlpha' to set transparency for data points.
 - '09_statistics.js' new example showing a timeline per artist/# tracks.
 - 'timeline' graph type used specifically to display 3-D data along the new 'multi' graph variable (see below). Is a modified version of the 'bars' type.
 - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
@@ -17,10 +18,12 @@
 - 'bSlicePerKey' configuration variable to force slicing manipulation by total number of x asis keys, instead of values per series. For ex. 2 series may have different X values, resulting on an X axis longer than expected since slicing gets N values per serie, not the values associated to the first N X-keys shared by all series. This is now the default behavior.
 - 'multi' graph variable to display aggregated data per X-value, i.e. effectively displaying 3-dimensional data. For ex. number of tracks (Y) per Artist (Z) per Year (X), where artists will be grouped per year. This type of data is better displayed on bar graphs. Data should be passed with this schema: [[[{x1, y11, z11}, ...],[{x2, y21, z21}, ...], ...]], where a single serie contains multiple X-planes, each one being an array of points with same X-value. The framework will automatically manipulate the data to display the X-points of every X-plane array on different series. In case the X-plane arrays don't have the same number of points, output series may have different length, which is now handled by the 'bSlicePerKey' config above.
 - Built-in 'natural', 'reverse', 'string natural', 'string reverse', 'random' (Fisher-Yates algorithm), 'radix' (https://github.com/aldo-gutierrez/bitmasksorterJS), 'radix reverse', 'radix int', 'radix int reverse' sorting methods, by setting dataManipulation.sort to those labels.
+- 'dataManipulation.sort' may be assigned to an axis by adding the string method along the axis. For ex. 'natural|x' or 'reverse|y'. Note it's limited to a single axis. For more complex sorting just provide a function.
 - 'dataManipulation.sort' function may now be a method present on the array prototype, like: ```dataManipulation.sort = Array.prototype.shuffle;``` instead of a compare function  used within .sort().
 - 'dataManipulation.sort' function may be added as a pair [function, [args]], where the function is a method on array prototype and args is passed as array[function](...args). This may is usually used along Schwartzian transform for sorting; in fact the method is built-in and can be called with ```dataManipulation.sort = ['Schwartzian transform', [(point) => processPoint(point)]];``` or ```dataManipulation.sort = [Array.prototype.schwartzianSort, [(point) => processPoint(point)]];```, being equivalent. The second argument for the sorting method is the compare function, provided by default as natural sorting for numbers. Change as required for strings (for. ex. using localeCompare()).
-- Scroll, settings and display settings buttons have been added; enabled by setting ```buttons = {xScroll: true , settings: true, display: true}```. Functionality is defined by ```callbacks = {settings: {/* onLbtnUp, onRbtnUp */}, display: {/* onLbtnUp, onRbtnUp */}}```. Scroll functionality is internally handled.
-- Callback have been added, defined by ```{point: {/* onLbtnUp, onRbtnUp */}, focus: {/* onMouseWwheel, onRbtnUp */}, settings: {/* onLbtnUp, onRbtnUp */}, display: {/* onLbtnUp, onRbtnUp */}}```. 'onMouseWwheel' functionality (while panel is on focus) is internally handled by default, unless explicitly set to null or replaced.
+- Scroll, zoom, settings and display settings buttons have been added; enabled by setting ```buttons = {xScroll: true , settings: true, display: true}```. Functionality is defined by ```callbacks = {settings: {/* onLbtnUp, onRbtnUp */}, display: {/* onLbtnUp, onRbtnUp */}}```. Scroll functionality is internally handled.
+- Callback have been added, defined by ```{point: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, focus: {/* onMouseWwheel, onRbtnUp */}, settings: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, display: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, zoom: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, config: {/* change, backgroundColor */}}```. 'onMouseWwheel' functionality (while panel is on focus) is internally handled by default, unless explicitly set to null or replaced.
+- Settings at'configuration.bDynColor' and 'configuration.bDynColorBW' to dynamically change the chart colors according to the callback's output set at 'callbacks.config.backgroundColor' (see above). See [Timeline-SMP](https://github.com/regorxxx/Timeline-SMP) for an example.
 - Zoom functionality using the mouse wheel, which slices the data range to be smaller/bigger.
 - Scroll functionality using mouse dragging while clicking, which slices the data to the left/right (not changing the range size).
 ### Changed
@@ -30,6 +33,7 @@
 - Background color can now be set to null to use it as overlay.
 - Better Y axis tick management for auto mode.
 - Series may now have different X-values and be drawn properly. i.e. not all X-keys must be present on every serie. In the case of 'lines' graph types, it will produce discontinuous lines.
+- Replaced library [chroma.js with own version](https://regorxxx.github.io/chroma.js/).
 ### Removed
 ### Fixed
 - Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
