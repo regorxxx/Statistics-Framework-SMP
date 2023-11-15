@@ -80,6 +80,11 @@ function on_mouse_rbtn_up(x, y) {
 
 There are more usage examples on the 'examples' folder.
 
+## Other implementations
+ 1. [Timeline-SMP](https://github.com/regorxxx/Timeline-SMP): Interactive Timeline of your library. Configurable by Title Format.
+ 2. [Playlist-Manager-SMP](https://github.com/regorxxx/Playlist-Manager-SMP): A playlist manager for foobar2000.
+ 3. [World-Map-SMP](https://github.com/regorxxx/World-Map-SMP): Displays current artist's country on the world map. 
+
 ## Installation
 Since the framework only requires 1 file, i.e. the main one, you can simply include it along any other script where you will use the charts. The helpers will be loaded automatically.
 
