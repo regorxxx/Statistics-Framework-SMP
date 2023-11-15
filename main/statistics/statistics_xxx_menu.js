@@ -1,5 +1,5 @@
 ﻿'use strict';
-//19/10/23
+//06/11/23
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
@@ -12,7 +12,7 @@ function bindMenu(parent) {
 }
 
 // Generic statistics menu which should work on almost any chart...
-function createStatisticsMenu(bClear = true) {
+function createStatisticsMenu(bClear = true) { // Must be bound to _chart() instance
 	// Constants
 	this.tooltip.SetValue(null);
 	if (!this.menu) {this.menu = new _menu();}
@@ -28,7 +28,7 @@ function createStatisticsMenu(bClear = true) {
 					if (subKey) {
 						if (Array.isArray(subKey)) {
 							const len = subKey.length - 1;
-							const obj = {[key]: {}};
+							const obj = {[key]: {}, callbackArgs: {bSaveProperties: true}};
 							let prev = obj[key];
 							subKey.forEach((curr, i) => {
 								prev[curr] = i === len ? option.newValue : {};
@@ -36,10 +36,10 @@ function createStatisticsMenu(bClear = true) {
 							});
 							this.changeConfig(obj);
 						} else {
-							this.changeConfig({[key]: {[subKey]: option.newValue}});
+							this.changeConfig({[key]: {[subKey]: option.newValue}, callbackArgs: {bSaveProperties: true}});
 						}
 					}
-					else {this.changeConfig({[key]: option.newValue});}
+					else {this.changeConfig({[key]: option.newValue, callbackArgs: {bSaveProperties: true}});}
 				}});
 				if (bCheck) {
 					menu.newCheckMenu(menuName, option.entryText, void(0), () => {
@@ -48,6 +48,7 @@ function createStatisticsMenu(bClear = true) {
 								? subKey.reduce((acc, curr) => acc[curr], this[key])
 								: this[key][subKey] 
 							: this[key];
+						if (key === 'dataManipulation' && subKey === 'sort' && option.newValue === this.convertSortLabel(this.sortKey)) {return true;}
 						if (option.newValue && typeof option.newValue === 'function') {return !!(val && val.name === option.newValue.name);}
 						if (option.newValue && typeof option.newValue === 'object') {
 							if (Array.isArray(val)) {
@@ -66,11 +67,9 @@ function createStatisticsMenu(bClear = true) {
 			}
 		}.bind(this);
 	}
-	const sortInv = (a, b) => {return b.y - a.y;};
-	const sortNat = (a, b) => {return a.y - b.y;};
 	const filtGreat = (num) => {return (a) => {return a.y > num;}};
 	const filtLow = (num) => {return (a) => {return a.y < num;}};
-	const fineGraphs = new Set(['bars', 'doughnut', 'pie']);
+	const fineGraphs = new Set(['bars', 'doughnut', 'pie', 'timeline']);
 	const sizeGraphs = new Set(['scatter', 'lines']);
 	// Header
 	menu.newEntry({entryText: this.title, flags: MF_GRAYED});
@@ -79,6 +78,7 @@ function createStatisticsMenu(bClear = true) {
 	{
 		const subMenu = menu.newMenu('Chart type...');
 		[
+			{isEq: null,	key: this.graph.type, value: null,				newValue: 'timeline',		entryText: 'Timeline'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'scatter',		entryText: 'Scatter'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'bars',			entryText: 'Bars'},
 			{isEq: null,	key: this.graph.type, value: null,				newValue: 'lines',			entryText: 'Lines'},
@@ -100,10 +100,19 @@ function createStatisticsMenu(bClear = true) {
 		const subMenu = menu.newMenu('Sorting...');
 		if (this.dataManipulation.distribution === null) {
 			[
-				{isEq: null,	key: this.dataManipulation.sort, value: null,						newValue: sortNat,			entryText: 'Natural sorting'},
-				{isEq: null,	key: this.dataManipulation.sort, value: null,						newValue: sortInv,			entryText: 'Inverse sorting'},
+				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'natural|x',	entryText: 'Natural sorting (X)'},
+				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'reverse|x',	entryText: 'Reverse sorting (X)'},
 				{entryText: 'sep'},
-				{isEq: null,	key: this.dataManipulation.sort, value: null,						newValue: null,				entryText: 'No sorting'}
+				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'natural|y',	entryText: 'Natural sorting (Y)'},
+				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'reverse|y',	entryText: 'Reverse sorting (Y)'},
+				{entryText: 'sep'},
+				...(this.graph.multi 
+					? [ 
+						{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'natural|z',	entryText: 'Natural sorting (Z)'},
+						{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'reverse|z',	entryText: 'Reverse sorting (Z)'},
+						{entryText: 'sep'}
+					] : []),
+				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: null,								entryText: 'No sorting'}
 			].forEach(createMenuOption('dataManipulation', 'sort', subMenu));
 		} else {
 			[
@@ -192,6 +201,15 @@ function createStatisticsMenu(bClear = true) {
 				{isEq: null,	key: this.axis.y.showKey, value: null,					newValue: {showKey: !this.axis.y.showKey},			entryText: (this.axis.y.showKey ? 'Hide' : 'Show') + ' Y title'}
 			].forEach(createMenuOption('axis', 'y', subMenuTwo, false));
 		}
+		{
+			const subMenuTwo = menu.newMenu('Dynamic colors...', subMenu, this.callbacks.config.backgroundColor ? MF_STRING : MF_GRAYED);
+			[
+				{isEq: null,	key: this.configuration.bDynColor, value: null,				newValue: !this.configuration.bDynColor,		entryText: 'Invert background color'},
+			].forEach(createMenuOption('configuration', 'bDynColor', subMenuTwo, true));
+			[
+				{isEq: null,	key: this.configuration.bDynColorBW, value: null,				newValue: !this.configuration.bDynColorBW,		entryText: 'Only in B&W'},
+			].forEach(createMenuOption('configuration', 'bDynColorBW', subMenuTwo, true));
+		}
 	}
 	{
 		const subMenu = menu.newMenu('Color palette...');
@@ -201,11 +219,26 @@ function createStatisticsMenu(bClear = true) {
 			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'sequential',			entryText: 'Sequential'},
 			{entryText: 'sep'},
 			{isEq: null,	key: this.chroma.scheme, value: null,				newValue: 'random',				entryText: 'Random'},
-		].forEach(createMenuOption('chroma', 'scheme', subMenu, true, () => {this.colors = [];})); // Remove colors to force new palette		
+		].forEach(createMenuOption('chroma', 'scheme', subMenu, true, () => {this.colors = [];})); // Remove colors to force new palette
+		menu.newEntry({menuName: subMenu, entryText: 'sep'});
+		{
+				const subMenuTwo = menu.newMenu('By scheme...', subMenu);
+				for (let key in (this.chroma.colorBlindSafe ? colorbrewer.colorBlind : colorbrewer)) {
+					colorbrewer[key].forEach((scheme, i) => {
+						if (i === 0) {
+							menu.newEntry({menuName: subMenuTwo, entryText: key.charAt(0).toUpperCase() + key.slice(1), flags: MF_GRAYED | MF_MENUBARBREAK});
+							menu.newEntry({menuName: subMenuTwo, entryText: 'sep'});
+						}
+						[
+							{isEq: null,	key: this.chroma.scheme, value: null,				newValue: scheme,			entryText: scheme},
+						].forEach(createMenuOption('chroma', 'scheme', subMenuTwo, true, () => {this.colors = [];})); // Remove colors to force new palette
+					});
+				}
+		}
 		menu.newEntry({menuName: subMenu, entryText: 'sep'});
 		menu.newEntry({menuName: subMenu, entryText: 'Colorblind safe?', func: () => {
 			this.colors = [];
-			this.changeConfig({chroma: {colorBlindSafe: !this.chroma.colorBlindSafe}});
+			this.changeConfig({chroma: {colorBlindSafe: !this.chroma.colorBlindSafe, callbackArgs: {bSaveProperties: true}}});
 		}, flags: this.chroma.scheme === 'random' ? MF_GRAYED : MF_STRING});
 		menu.newCheckMenu(subMenu, 'Colorblind safe?', void(0), () => {return this.chroma.colorBlindSafe;});
 	}
@@ -223,6 +256,12 @@ function createStatisticsMenu(bClear = true) {
 			['circle', 'circumference', 'cross', 'triangle', 'plus'].map((val) => {
 				return {isEq: null, key: this.graph.point, value: null, newValue: val, entryText: val};
 			}).forEach(createMenuOption('graph', 'point', configSubMenu));
+		}
+		{
+			const configSubMenu = menu.newMenu('Point transparency...', subMenu);
+			[0, 20, 40, 60, 80, 100].map((val) => {
+				return {isEq: null,	key: this.graph.pointAlpha, value: null, newValue: Math.round(val * 255 / 100), entryText: val.toString()};
+			}).forEach(createMenuOption('graph', 'pointAlpha', configSubMenu));
 		}
 	}
 	return menu;
