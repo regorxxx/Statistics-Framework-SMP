@@ -1,5 +1,5 @@
 ﻿'use strict';
-//30/10/23
+//07/11/23
 
 /* 
 	helpers_xxx_UI.js 
@@ -110,7 +110,7 @@ function RGBA(r, g, b, a) {
 
 function toRGB(color) { // returns an array like [192, 0, 0]
 	const a = color - 0xFF000000;
-	return [a >> 16, a >> 8 & 0xFF, a & 0xFF];
+	return [a >> 16 & 0xFF, a >> 8 & 0xFF, a & 0xFF];
 }
 
 
@@ -163,6 +163,9 @@ const chars = {
 	right 			: '\uf054',
 	up 				: '\uf077',
 	down 			: '\uf078',
+	// Utilities
+	searchPlus 		: '\uf00e',
+	searchMinus		: '\uf010',
 };
 
 /* 
