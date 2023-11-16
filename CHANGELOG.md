@@ -9,6 +9,7 @@
 
 ## [Unreleased][]
 ### Added
+- 'chroma.interpolation' for chroma schemes, now set to 'lrgb' by default. See [available modes here](https://regorxxx.github.io/chroma.js/#scalemode).
 - 'graph.pointAlpha' to set transparency for data points on all chart types.
 - '09_statistics.js' new example showing a timeline per artist/# tracks.
 - 'timeline' graph type used specifically to display 3-D data along the new 'multi' graph variable (see below). Is a modified version of the 'bars' type.
