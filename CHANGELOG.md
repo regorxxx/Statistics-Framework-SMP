@@ -9,7 +9,7 @@
 
 ## [Unreleased][]
 ### Added
-- 'graph.pointAlpha' to set transparency for data points.
+- 'graph.pointAlpha' to set transparency for data points on all chart types.
 - '09_statistics.js' new example showing a timeline per artist/# tracks.
 - 'timeline' graph type used specifically to display 3-D data along the new 'multi' graph variable (see below). Is a modified version of the 'bars' type.
 - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
@@ -21,13 +21,15 @@
 - 'dataManipulation.sort' may be assigned to an axis by adding the string method along the axis. For ex. 'natural|x' or 'reverse|y'. Note it's limited to a single axis. For more complex sorting just provide a function.
 - 'dataManipulation.sort' function may now be a method present on the array prototype, like: ```dataManipulation.sort = Array.prototype.shuffle;``` instead of a compare function  used within .sort().
 - 'dataManipulation.sort' function may be added as a pair [function, [args]], where the function is a method on array prototype and args is passed as array[function](...args). This may is usually used along Schwartzian transform for sorting; in fact the method is built-in and can be called with ```dataManipulation.sort = ['Schwartzian transform', [(point) => processPoint(point)]];``` or ```dataManipulation.sort = [Array.prototype.schwartzianSort, [(point) => processPoint(point)]];```, being equivalent. The second argument for the sorting method is the compare function, provided by default as natural sorting for numbers. Change as required for strings (for. ex. using localeCompare()).
-- Scroll, zoom, settings and display settings buttons have been added; enabled by setting ```buttons = {xScroll: true , settings: true, display: true}```. Functionality is defined by ```callbacks = {settings: {/* onLbtnUp, onRbtnUp */}, display: {/* onLbtnUp, onRbtnUp */}}```. Scroll functionality is internally handled.
-- Callback have been added, defined by ```{point: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, focus: {/* onMouseWwheel, onRbtnUp */}, settings: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, display: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, zoom: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, config: {/* change, backgroundColor */}}```. 'onMouseWwheel' functionality (while panel is on focus) is internally handled by default, unless explicitly set to null or replaced.
+- Scroll, zoom, settings and display settings buttons have been added; enabled by setting ```buttons = {xScroll: true , settings: true, display: true}```. Functionality is defined by ```callbacks = {settings: {/* onLbtnUp, onDblLbtn, onRbtnUp */}, display: {/* onLbtnUp, onDblLbtn, onRbtnUp */}}```. Scroll and zoom functionality is internally handled by default.
+- Custom button has been added; enabled by setting ```buttons = {custom: true}```. Functionality is defined by ```callbacks = {custom: {/* onLbtnUp, onDblLbtn, onRbtnUp, tooltip */}}```. 'tooltip' should be a function or a string, to be used as tooltip text when mouse is over.
+- Callback have been added, defined by ```{point: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, focus: {/* onMouseWwheel, onRbtnUp */}, settings: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, display: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, zoom: {/* onLbtnUp, onRbtnUp, onDblLbtn */}, custom: {/* onLbtnUp, onRbtnUp, onDblLbtn, tooltip  */}, config: {/* change, backgroundColor */}}```. 'onMouseWwheel' functionality (while panel is on focus) is internally handled by default, unless explicitly set to null or replaced.
 - Settings at'configuration.bDynColor' and 'configuration.bDynColorBW' to dynamically change the chart colors according to the callback's output set at 'callbacks.config.backgroundColor' (see above). See [Timeline-SMP](https://github.com/regorxxx/Timeline-SMP) for an example.
 - Zoom functionality using the mouse wheel, which slices the data range to be smaller/bigger.
 - Scroll functionality using mouse dragging while clicking, which slices the data to the left/right (not changing the range size).
 ### Changed
-- Adjusted mouse cursor over specific elements. 
+- Adjusted mouse cursor over specific elements.
+- Improved input menu entries with hints. For ex. transparency input menu entries now have a hint about which value is opaque and which transparent. 
 - Improved chart menus with all new additions and code cleanup.
 - Tooltip now also shows percentages on pie and doughnut modes.
 - Background color can now be set to null to use it as overlay.
