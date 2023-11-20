@@ -29,6 +29,7 @@
 - Zoom functionality using the mouse wheel, which slices the data range to be smaller/bigger.
 - Scroll functionality using mouse dragging while clicking, which slices the data to the left/right (not changing the range size).
 ### Changed
+- 'tooltipText' may now be a function or a string. tooltipText(point, serieIdx).
 - Adjusted mouse cursor over specific elements.
 - Improved input menu entries with hints. For ex. transparency input menu entries now have a hint about which value is opaque and which transparent. 
 - Improved chart menus with all new additions and code cleanup.
@@ -42,6 +43,7 @@
 - Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
 - Improved color checking for bad inputs.
 - Improved data checking for bad inputs.
+- Fix color scheme application when changing slice (since the scale changes).
 - Y axis ticks were sometimes not properly set to respect the margins or panel size.
 - Fixed some setting not being set in some cases while using the menu.
 - Multiple minor UI fixes.
