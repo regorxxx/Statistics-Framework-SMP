@@ -14,10 +14,11 @@
 - '09_statistics.js' new example showing a timeline per artist/# tracks.
 - 'timeline' graph type used specifically to display 3-D data along the new 'multi' graph variable (see below). Is a modified version of the 'bars' type.
 - 'bAltLabels' axis variable for alternative drawing. For bars, displays the text in vertical (so it doesn't get cut on small width). For doughnut and pie charts, draws a line from the serie to the label.
-- 'bPopupBackground' configuration variable to display an overlay while loading Async data. Default behavior is false, i.e. only the text and animation is displayed.
-- 'bProfile' configuration variable to enable profiling logging on console.
-- 'bSlicePerKey' configuration variable to force slicing manipulation by total number of x asis keys, instead of values per series. For ex. 2 series may have different X values, resulting on an X axis longer than expected since slicing gets N values per serie, not the values associated to the first N X-keys shared by all series. This is now the default behavior.
-- 'multi' graph variable to display aggregated data per X-value, i.e. effectively displaying 3-dimensional data. For ex. number of tracks (Y) per Artist (Z) per Year (X), where artists will be grouped per year. This type of data is better displayed on bar graphs. Data should be passed with this schema: [[[{x1, y11, z11}, ...],[{x2, y21, z21}, ...], ...]], where a single serie contains multiple X-planes, each one being an array of points with same X-value. The framework will automatically manipulate the data to display the X-points of every X-plane array on different series. In case the X-plane arrays don't have the same number of points, output series may have different length, which is now handled by the 'bSlicePerKey' config above.
+- 'configuration.bPopupBackground' variable to display an overlay while loading Async data. Default behavior is false, i.e. only the text and animation is displayed.
+- 'configuration.bProfile' variable to enable profiling logging on console.
+- 'configuration.bSlicePerKey' variable to force slicing manipulation by total number of x asis keys, instead of values per series. For ex. 2 series may have different X values, resulting on an X axis longer than expected since slicing gets N values per serie, not the values associated to the first N X-keys shared by all series. This is now the default behavior.
+- 'configuration.maxSliceOnDataChange' variable to force a max slice range when changing data (which is set to Infinity otherwise). Set to 50 by default.
+- 'graph.multi' variable to display aggregated data per X-value, i.e. effectively displaying 3-dimensional data. For ex. number of tracks (Y) per Artist (Z) per Year (X), where artists will be grouped per year. This type of data is better displayed on bar graphs. Data should be passed with this schema: [[[{x1, y11, z11}, ...],[{x2, y21, z21}, ...], ...]], where a single serie contains multiple X-planes, each one being an array of points with same X-value. The framework will automatically manipulate the data to display the X-points of every X-plane array on different series. In case the X-plane arrays don't have the same number of points, output series may have different length, which is now handled by the 'bSlicePerKey' config above.
 - Built-in 'natural', 'reverse', 'string natural', 'string reverse', 'random' (Fisher-Yates algorithm), 'radix' (https://github.com/aldo-gutierrez/bitmasksorterJS), 'radix reverse', 'radix int', 'radix int reverse' sorting methods, by setting dataManipulation.sort to those labels.
 - 'dataManipulation.sort' may be assigned to an axis by adding the string method along the axis. For ex. 'natural|x' or 'reverse|y'. Note it's limited to a single axis. For more complex sorting just provide a function.
 - 'dataManipulation.sort' function may now be a method present on the array prototype, like: ```dataManipulation.sort = Array.prototype.shuffle;``` instead of a compare function  used within .sort().
@@ -47,6 +48,7 @@
 - Y axis ticks were sometimes not properly set to respect the margins or panel size.
 - Fixed some setting not being set in some cases while using the menu.
 - Multiple minor UI fixes.
+- Crash opening menu when palettes have been set to not use only colorblind schemes.
 
 ## [0.3.1] - 2023-08-24
 ### Added
