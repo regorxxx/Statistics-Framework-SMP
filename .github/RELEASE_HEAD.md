@@ -1,0 +1,1 @@
+See full [changelog here](https://github.com/regorxxx/Statistics-Framework-SMP/blob/main/CHANGELOG.md).
