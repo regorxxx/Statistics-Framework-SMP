@@ -39,6 +39,7 @@
 - Better Y axis tick management for auto mode.
 - Series may now have different X-values and be drawn properly. i.e. not all X-keys must be present on every serie. In the case of 'lines' graph types, it will produce discontinuous lines.
 - Replaced library [chroma.js with own version](https://regorxxx.github.io/chroma.js/).
+- Optimized repainting to use less resources.
 ### Removed
 ### Fixed
 - Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
