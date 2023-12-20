@@ -30,6 +30,7 @@
 - Zoom functionality using the mouse wheel, which slices the data range to be smaller/bigger.
 - Scroll functionality using mouse dragging while clicking, which slices the data to the left/right (not changing the range size).
 ### Changed
+- Sorting is now set by default to 'natural|x' when changing from distributions to standard graphs, unless a specific sorting method is provided. Sorting is forced to null when switching to distributions.
 - 'tooltipText' may now be a function or a string. tooltipText(point, serieIdx).
 - Adjusted mouse cursor over specific elements.
 - Improved input menu entries with hints. For ex. transparency input menu entries now have a hint about which value is opaque and which transparent. 
@@ -50,6 +51,7 @@
 - Fixed some setting not being set in some cases while using the menu.
 - Multiple minor UI fixes.
 - Crash opening menu when palettes have been set to not use only colorblind schemes.
+- Minor fixes.
 
 ## [0.3.1] - 2023-08-24
 ### Added
