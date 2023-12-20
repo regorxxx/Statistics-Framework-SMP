@@ -1,11 +1,15 @@
 ﻿'use strict';
-//04/12/23
+//20/12/23
+
+/* exported bindMenu */
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
 try {include('..\\..\\helpers\\menu_xxx.js');} catch(e) {
 	try {include('..\\..\\examples\\_statistics\\menu_xxx.js');} catch(e) {fb.ShowPopupMessage('Missing menu framework file', window.Name);}
 }
+/* global _attachedMenu:readable, _menu:readable */
+/* global MF_GRAYED:readable, _scale:readable, MF_STRING:readable, colorbrewer:readable, MF_MENUBARBREAK:readable */
 
 function bindMenu(parent) {
 	return _attachedMenu.call(parent, {rMenu: createStatisticsMenu.bind(parent), popup: parent.pop});
@@ -43,10 +47,10 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 				}});
 				if (bCheck) {
 					menu.newCheckMenu(menuName, option.entryText, void(0), () => {
-						const val = subKey 
+						const val = subKey
 							? Array.isArray(subKey)
 								? subKey.reduce((acc, curr) => acc[curr], this[key])
-								: this[key][subKey] 
+								: this[key][subKey]
 							: this[key];
 						if (key === 'dataManipulation' && subKey === 'sort' && option.newValue === this.convertSortLabel(this.sortKey)) {return true;}
 						if (option.newValue && typeof option.newValue === 'function') {return !!(val && val.name === option.newValue.name);}
@@ -66,11 +70,10 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 				}
 			}
 		}.bind(this);
-	}
-	const filtGreat = (num) => {return (a) => {return a.y > num;}};
-	const filtLow = (num) => {return (a) => {return a.y < num;}};
+	};
+	const filtGreat = (num) => {return (a) => {return a.y > num;};};
+	const filtLow = (num) => {return (a) => {return a.y < num;};};
 	const fineGraphs = new Set(['bars', 'doughnut', 'pie', 'timeline']);
-	const sizeGraphs = new Set(['scatter', 'lines']);
 	// Header
 	menu.newEntry({entryText: this.title, flags: MF_GRAYED});
 	menu.newEntry({entryText: 'sep'});
@@ -96,7 +99,7 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 			const options = [...new Set([this.stats.maxGroup, 10, 8, 5, 4, 3, 2, 1].map((frac) => {
 				return Math.round(this.stats.maxGroup / frac) || this.stats.minGroup; // Don't allow zero
 			}))];
-			
+
 			options.map((val) => {
 				return {isEq: null, key: this.dataManipulation.group, value: null, newValue: val, entryText: val + ' point(s)'};
 			}).forEach(function (option, i){
@@ -123,8 +126,8 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'natural|y',	entryText: 'Natural sorting (Y)'},
 				{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'reverse|y',	entryText: 'Reverse sorting (Y)'},
 				{entryText: 'sep'},
-				...(this.graph.multi 
-					? [ 
+				...(this.graph.multi
+					? [
 						{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'natural|z',	entryText: 'Natural sorting (Z)'},
 						{isEq: null,	key: this.dataManipulation.sort, value: null,					newValue: 'reverse|z',	entryText: 'Reverse sorting (Z)'},
 						{entryText: 'sep'}
@@ -139,7 +142,7 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 		}
 		menu.newEntry({entryText: 'sep'});
 	}
-	{
+	{ // NOSONAR
 		{
 			const subMenu = menu.newMenu('Values shown...');
 			[
@@ -239,21 +242,21 @@ function createStatisticsMenu(bClear = true) { // Must be bound to _chart() inst
 		].forEach(createMenuOption('chroma', 'scheme', subMenu, true, () => {this.colors = [];})); // Remove colors to force new palette
 		menu.newEntry({menuName: subMenu, entryText: 'sep'});
 		{
-				const subMenuTwo = menu.newMenu('By scheme...', subMenu);
-				let j = 0;
-				for (let key in (this.chroma.colorBlindSafe ? colorbrewer.colorBlind : colorbrewer)) {
-					if (key === 'colorBlind') {continue;}
-					colorbrewer[key].forEach((scheme, i) => {
-						if (i === 0) {
-							menu.newEntry({menuName: subMenuTwo, entryText: key.charAt(0).toUpperCase() + key.slice(1), flags: (j === 0 ? MF_GRAYED : MF_GRAYED | MF_MENUBARBREAK)});
-							menu.newEntry({menuName: subMenuTwo, entryText: 'sep'});
-						}
-						[
-							{isEq: null,	key: this.chroma.scheme, value: null,				newValue: scheme,			entryText: scheme},
-						].forEach(createMenuOption('chroma', 'scheme', subMenuTwo, true, () => {this.colors = [];})); // Remove colors to force new palette
-					});
-					j++;
-				}
+			const subMenuTwo = menu.newMenu('By scheme...', subMenu);
+			let j = 0;
+			for (let key in (this.chroma.colorBlindSafe ? colorbrewer.colorBlind : colorbrewer)) {
+				if (key === 'colorBlind') {continue;}
+				colorbrewer[key].forEach((scheme, i) => {
+					if (i === 0) {
+						menu.newEntry({menuName: subMenuTwo, entryText: key.charAt(0).toUpperCase() + key.slice(1), flags: (j === 0 ? MF_GRAYED : MF_GRAYED | MF_MENUBARBREAK)});
+						menu.newEntry({menuName: subMenuTwo, entryText: 'sep'});
+					}
+					[
+						{isEq: null,	key: this.chroma.scheme, value: null,				newValue: scheme,			entryText: scheme},
+					].forEach(createMenuOption('chroma', 'scheme', subMenuTwo, true, () => {this.colors = [];})); // Remove colors to force new palette
+				});
+				j++;
+			}
 		}
 		menu.newEntry({menuName: subMenu, entryText: 'sep'});
 		menu.newEntry({menuName: subMenu, entryText: 'Colorblind safe?', func: () => {
