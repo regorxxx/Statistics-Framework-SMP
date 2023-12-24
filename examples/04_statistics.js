@@ -6,7 +6,7 @@ include('..\\main\\statistics\\statistics_xxx_menu.js');
 
 window.DefinePanel('Statistics example 4', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
-/* 
+/*
 	Data to feed the charts:
 	This may be arbitrary data in multiple series, with each point having x,y properties.
 	Each serie will use a different color.
@@ -15,7 +15,7 @@ window.DefinePanel('Statistics example 4', {author:'XXX', version: '1.0.0', feat
 		[{x, y}, ...], // Serie 2
 		...
 	]
-	
+
 	In this example 4 series are drawn on each chart.
 */
 function getData(option = 'tf', tf = 'genre') {
@@ -35,7 +35,7 @@ function getData(option = 'tf', tf = 'genre') {
 		case 'most played': {
 			const handleList = fb.GetLibraryItems();
 			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
+			const playCount = fb.TitleFormat('$max(%PLAY_COUNT%,%LASTFM_PLAY_COUNT%)').EvalWithMetadbs(handleList);
 			const tagCount = new Map();
 			libraryTags.forEach((tag, i) => {
 				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
@@ -47,7 +47,7 @@ function getData(option = 'tf', tf = 'genre') {
 		case 'most played proportional': {
 			const handleList = fb.GetLibraryItems();
 			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
+			const playCount = fb.TitleFormat('$max(%PLAY_COUNT%,%LASTFM_PLAY_COUNT%)').EvalWithMetadbs(handleList);
 			const tagCount = new Map();
 			const keyCount = new Map();
 			libraryTags.forEach((tag, i) => {
@@ -67,11 +67,11 @@ function getData(option = 'tf', tf = 'genre') {
 }
 
 
-/* 
+/*
 	Set the configuration for all charts using a default template and a table
 	Colors are not being set. One should be required per serie.
 	color: [rgbSerie1, ...]
-	
+
 	In this example 4 series are drawn on each chart.
 	Each serie has a different color scheme applied (random, sequential, OrRd and yellow-green gradient).
 */
@@ -81,7 +81,7 @@ const defaultConfig = {
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'genre'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'genre'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: 0,
@@ -98,7 +98,7 @@ const newConfig = [
 			data: Array(4).fill(...getData('tf', 'genre')), // 4 series
 			graph: {type: 'bars', borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'genre'}, 
+				x: {key: 'genre'},
 				y: {key: 'tracks'}
 			}
 		},
@@ -107,7 +107,7 @@ const newConfig = [
 			data: Array(4).fill(...getData('tf', 'artist')), // 4 series
 			graph: {type: 'bars', borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'artist'}, 
+				x: {key: 'artist'},
 				y: {key: 'tracks'}
 			}
 		}
@@ -118,7 +118,7 @@ const newConfig = [
 			data: Array(4).fill(...getData('tf', 'style')), // 4 series
 			graph: {type: 'bars', borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'style'}, 
+				x: {key: 'style'},
 				y: {key: 'tracks'}
 			}
 		},
@@ -127,14 +127,14 @@ const newConfig = [
 			data: Array(4).fill(...getData('tf', 'date')), // 4 series
 			graph: {type: 'bars', borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'date'}, 
+				x: {key: 'date'},
 				y: {key: 'tracks'}
 			}
 		}
 	]
 ];
 
-/* 
+/*
 	Automatically draw new graphs using table above
 */
 const rows = newConfig.length;
@@ -152,7 +152,7 @@ const nCharts = new Array(rows).fill(1).map((row) => {return new Array(columns).
 const charts = nCharts.flat(Infinity);
 charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
 
-/* 
+/*
 	Callbacks
 */
 function on_paint(gr) {

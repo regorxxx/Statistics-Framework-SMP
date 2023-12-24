@@ -6,7 +6,7 @@ include('..\\main\\statistics\\statistics_xxx_menu.js');
 
 window.DefinePanel('Statistics example 2', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
-/* 
+/*
 	Data to feed the charts:
 	This may be arbitrary data in multiple series, with each point having x,y properties.
 	Each serie will use a different color.
@@ -15,7 +15,7 @@ window.DefinePanel('Statistics example 2', {author:'XXX', version: '1.0.0', feat
 		[{x, y}, ...], // Serie 2
 		...
 	]
-	
+
 	In this example only one serie is drawn at the same time for all charts, except the first one.
 */
 function getData(option = 'tf', tf = 'genre') {
@@ -35,7 +35,7 @@ function getData(option = 'tf', tf = 'genre') {
 		case 'most played': {
 			const handleList = fb.GetLibraryItems();
 			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
+			const playCount = fb.TitleFormat('$max(%PLAY_COUNT%,%LASTFM_PLAY_COUNT%)').EvalWithMetadbs(handleList);
 			const tagCount = new Map();
 			libraryTags.forEach((tag, i) => {
 				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
@@ -47,7 +47,7 @@ function getData(option = 'tf', tf = 'genre') {
 		case 'most played proportional': {
 			const handleList = fb.GetLibraryItems();
 			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList);
-			const playCount = fb.TitleFormat('%play_count%').EvalWithMetadbs(handleList);
+			const playCount = fb.TitleFormat('$max(%PLAY_COUNT%,%LASTFM_PLAY_COUNT%)').EvalWithMetadbs(handleList);
 			const tagCount = new Map();
 			const keyCount = new Map();
 			libraryTags.forEach((tag, i) => {
@@ -66,12 +66,12 @@ function getData(option = 'tf', tf = 'genre') {
 	return data;
 }
 
-/* 
+/*
 	Set the configuration for all charts using a default template
 	Colors are not being set. One should be required per serie.
 	color: [rgbSerie1, ...]
-	
-	In this example only one serie is drawn at the same time, except the first one. 
+
+	In this example only one serie is drawn at the same time, except the first one.
 	Any color not set is set randomly at startup.
 */
 
@@ -81,7 +81,7 @@ const defaultConfig = {
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'genre'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'genre'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: 0,
@@ -106,7 +106,7 @@ const chartB = new _chart({
 	data: getData('tf', 'style'),
 	graph: {type: 'scatter', borderWidth: _scale(3), point: 'crux'},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'style'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'style'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: window.Width / 2,
@@ -122,7 +122,7 @@ const chartC = new _chart({
 	graph: {type: 'lines', borderWidth: _scale(3)},
 	dataManipulation: {sort: null, filter: (a) => {return a.y;}, slice: [0, 2], distribution: 'normal'},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'artist'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'artist'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'plays per track'}
 	},
 	x: 0,
@@ -137,7 +137,7 @@ const chartD = new _chart({
 	data: getData('tf', 'mood'),
 	dataManipulation: {sort: null, filter: null, slice: [0, 4], distribution: 'normal'},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'mood'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'mood'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}
 	},
 	x: window.Width / 2,
@@ -147,14 +147,14 @@ const chartD = new _chart({
 	title: window.Name + ' - ' + 'Graph 2 {mood - tracks}'
 });
 
-/* 
+/*
 	Put together for easy iteration later...
 */
 const rows = 2, columns = 2;
 const charts = [chartA, chartB, chartC, chartD];
 charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
 
-/* 
+/*
 	Callbacks
 */
 function on_paint(gr) {

@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/11/23
+//24/12/23
 
 /* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports */
 /* global folders:readable */
@@ -14,25 +14,25 @@ const WshShellUI = new ActiveXObject('WScript.Shell');
 
 // colorbrewer presets
 const colorbrewer = {
-	diverging: ['Spectral','RdYlGn','RdBu','PiYG','PRGn','RdYlBu','BrBG','RdGy','PuOr'],
-	qualitative: ['Set2','Accent','Set1','Set3','Dark2','Paired','Pastel2','Pastel1'],
-	sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn'],
+	diverging: ['Spectral', 'RdYlGn', 'RdBu', 'PiYG', 'PRGn', 'RdYlBu', 'BrBG', 'RdGy', 'PuOr'],
+	qualitative: ['Set2', 'Accent', 'Set1', 'Set3', 'Dark2', 'Paired', 'Pastel2', 'Pastel1'],
+	sequential: ['OrRd', 'PuBu', 'BuPu', 'Oranges', 'BuGn', 'YlOrBr', 'YlGn', 'Reds', 'RdPu', 'Greens', 'YlGnBu', 'Purples', 'GnBu', 'Greys', 'YlOrRd', 'PuRd', 'Blues', 'PuBuGn'],
 	colorBlind: {
-		diverging: ['RdBu','PiYG','PRGn','RdYlBu','BrBG','PuOr'],
-		qualitative: ['Set2','Dark2','Paired'],
-		sequential: ['OrRd','PuBu','BuPu','Oranges','BuGn','YlOrBr','YlGn','Reds','RdPu','Greens','YlGnBu','Purples','GnBu','Greys','YlOrRd','PuRd','Blues','PuBuGn']
+		diverging: ['RdBu', 'PiYG', 'PRGn', 'RdYlBu', 'BrBG', 'PuOr'],
+		qualitative: ['Set2', 'Dark2', 'Paired'],
+		sequential: ['OrRd', 'PuBu', 'BuPu', 'Oranges', 'BuGn', 'YlOrBr', 'YlGn', 'Reds', 'RdPu', 'Greens', 'YlGnBu', 'Purples', 'GnBu', 'Greys', 'YlOrRd', 'PuRd', 'Blues', 'PuBuGn']
 	}
 };
 
 // Cache
 const scaleDPI = {}; // Caches _scale() values;
-const fonts = {notFound: []}; // Caches _gdifont() values;
+const fonts = { notFound: [] }; // Caches _gdifont() values;
 
 function _scale(size, bRound = true) {
 	if (!scaleDPI[size]) {
 		let DPI;
-		try {DPI = WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI');}
-		catch (e) {DPI = 96;} // Fix for linux
+		try { DPI = WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI'); }
+		catch (e) { DPI = 96; } // Fix for linux
 		scaleDPI[size] = size * DPI / 72;
 	}
 	return (bRound ? Math.round(scaleDPI[size]) : scaleDPI[size]);
@@ -53,7 +53,7 @@ function _gdiFont(name, size, style) {
 
 function _tt(value, font = 'Segoe UI', fontSize = _scale(10), width = 600) {
 	this.tooltip = window.Tooltip;
-	this.font = {name: font, size: fontSize};
+	this.font = { name: font, size: fontSize };
 	this.tooltip.SetFont(font, fontSize);
 	this.width = width;
 	this.tooltip.SetMaxWidth(width);
@@ -61,7 +61,7 @@ function _tt(value, font = 'Segoe UI', fontSize = _scale(10), width = 600) {
 	this.oldDelay = this.tooltip.GetDelayTime(3); //TTDT_INITIAL
 	this.bActive = false;
 
-	this.SetValue = function (value,  bForceActivate = false) {
+	this.SetValue = function (value, bForceActivate = false) {
 		if (value === null) {
 			this.Deactivate();
 		} else {
@@ -69,7 +69,7 @@ function _tt(value, font = 'Segoe UI', fontSize = _scale(10), width = 600) {
 				this.tooltip.Text = value;
 				this.Activate();
 			}
-			if (bForceActivate) {this.Activate();} // Only on force to avoid flicker
+			if (bForceActivate) { this.Activate(); } // Only on force to avoid flicker
 		}
 	};
 
@@ -92,11 +92,11 @@ function _tt(value, font = 'Segoe UI', fontSize = _scale(10), width = 600) {
 	};
 
 	this.SetDelayTime = function (type, time) {
-		this.tooltip.SetDelayTime(type, time) ;
+		this.tooltip.SetDelayTime(type, time);
 	};
 
 	this.GetDelayTime = function (type) {
-		this.tooltip.GetDelayTime(type) ;
+		this.tooltip.GetDelayTime(type);
 	};
 
 }
@@ -107,7 +107,7 @@ function RGB(r, g, b) {
 
 function RGBA(r, g, b, a) {
 	let res = 0xff000000 | (r << 16) | (g << 8) | (b);
-	if (typeof a !== 'undefined') {res = (res & 0x00ffffff) | (a << 24);}
+	if (typeof a !== 'undefined') { res = (res & 0x00ffffff) | (a << 24); }
 	return res;
 }
 
@@ -138,7 +138,7 @@ function getBrightness(r, g, b) { // https://www.w3.org/TR/AERT/#color-contrast
 }
 
 function isDark(r, g, b) {
-	return (getBrightness(r,g,b) < 186);
+	return (getBrightness(r, g, b) < 186);
 }
 
 function opaqueColor(color, percent) {
@@ -159,70 +159,70 @@ function invert(color, bBW = false) {
 */
 
 const chars = {
-	cogs			: '\uf085',
-	chartV2			: '\uf080',
+	cogs: '\uf085',
+	chartV2: '\uf080',
 	// Carets
-	left 			: '\uf053',
-	right 			: '\uf054',
-	up 				: '\uf077',
-	down 			: '\uf078',
+	left: '\uf053',
+	right: '\uf054',
+	up: '\uf077',
+	down: '\uf078',
 	// Utilities
-	searchPlus 		: '\uf00e',
-	searchMinus		: '\uf010',
+	searchPlus: '\uf00e',
+	searchMinus: '\uf010',
 };
 
 /*
 	helpers_xxx_UI_flip.js
 */
 
-String.prototype.flip = function() { // NOSONAR
+String.prototype.flip = function () { // NOSONAR
 	const last = this.length - 1;
 	let result = new Array(this.length);
 	for (let i = last; i >= 0; --i) {
 		let c = this.charAt(i);
 		let r = flipTable[c.toLowerCase()];
-		result[last - i] = r !== void(0) ? r : c;
+		result[last - i] = r !== void (0) ? r : c;
 	}
 	return result.join('');
 };
 
 const flipTable = {
-	a : '\u0250',
-	b : 'q',
-	c : '\u0254',
-	d : 'p',
-	e : '\u01DD',
-	f : '\u025F',
-	g : '\u0183',
-	h : '\u0265',
-	i : '\u0131',
-	j : '\u027E',
-	k : '\u029E',
+	a: '\u0250',
+	b: 'q',
+	c: '\u0254',
+	d: 'p',
+	e: '\u01DD',
+	f: '\u025F',
+	g: '\u0183',
+	h: '\u0265',
+	i: '\u0131',
+	j: '\u027E',
+	k: '\u029E',
 	//l : '\u0283',
-	m : '\u026F',
-	n : 'u',
-	p : 'q',
-	r : '\u0279',
-	t : '\u0287',
-	v : '\u028C',
-	w : '\u028D',
-	y : '\u028E',
-	'.' : '\u02D9',
-	'[' : ']',
-	'(' : ')',
-	'{' : '}',
-	'?' : '\u00BF',
-	'!' : '\u00A1',
-	'\'' : ',',
-	'<' : '>',
-	'_' : '\u203E',
-	';' : '\u061B',
-	'\u203F' : '\u2040',
-	'\u2045' : '\u2046',
-	'\u2234' : '\u2235',
-	'\r' : '\n'
+	m: '\u026F',
+	n: 'u',
+	p: 'q',
+	r: '\u0279',
+	t: '\u0287',
+	v: '\u028C',
+	w: '\u028D',
+	y: '\u028E',
+	'.': '\u02D9',
+	'[': ']',
+	'(': ')',
+	'{': '}',
+	'?': '\u00BF',
+	'!': '\u00A1',
+	'\'': ',',
+	'<': '>',
+	'_': '\u203E',
+	';': '\u061B',
+	'\u203F': '\u2040',
+	'\u2045': '\u2046',
+	'\u2234': '\u2235',
+	'\r': '\n'
 };
-for (let i in flipTable) {flipTable[flipTable[i]] = i;}
+for (let i in flipTable) { flipTable[flipTable[i]] = i; }
 
 /*
 	helpers_xxx_prototypes.js
@@ -232,7 +232,7 @@ function isFunction(obj) {
 }
 
 // Randomly rearranges the items in an array, modifies original. Fisher-Yates algorithm
-Array.prototype.shuffle = function() { // NOSONAR
+Array.prototype.shuffle = function () { // NOSONAR
 	let last = this.length, n;
 	while (last > 0) {
 		n = Math.floor(Math.random() * last--);
@@ -256,22 +256,22 @@ Array.prototype.schwartzianSort = function (processFunc, sortFunc = (a, b) => a[
 	return this.map((x) => [x, processFunc(x)]).sort(sortFunc).map((x) => x[0]); // NOSONAR
 };
 
-const range = (start, stop, step) => new Array(Math.round((stop - start) / step + 1)).fill(void(0)).map((_, i) => start + (i * step));
+const range = (start, stop, step) => new Array(Math.round((stop - start) / step + 1)).fill(void (0)).map((_, i) => start + (i * step));
 
 // Adds/subtracts 'offset' to 'reference' considering the values must follow cyclic logic within 'limits' range (both values included)
 // Ex: [1,8], x = 5 -> x + 4 = 1 <=> cyclicOffset(5, 4, [1,8])
 function cyclicOffset(reference, offset, limits) {
 	if (offset && reference >= limits[0] && reference <= limits[1]) {
 		reference += offset;
-		if (reference < limits[0]) {reference += limits[1];}
-		if (reference > limits[1]) {reference -= limits[1];}
+		if (reference < limits[0]) { reference += limits[1]; }
+		if (reference > limits[1]) { reference -= limits[1]; }
 	}
 	return reference;
 }
 
 const cutRegex = {};
 String.prototype.cut = function cut(c) { // NOSONAR
-	if (!Object.hasOwn(cutRegex, c)) {cutRegex[c] = new RegExp('^(.{' + c + '}).{2,}', 'g');}
+	if (!Object.hasOwn(cutRegex, c)) { cutRegex[c] = new RegExp('^(.{' + c + '}).{2,}', 'g'); }
 	return this.replace(cutRegex[c], '$1…');
 };
 
@@ -303,12 +303,12 @@ function _qCond(tag, bUnquote = false) {
 			: tag;
 }
 
-function round(floatnum, decimals, eps = 10**-14){
+function round(floatnum, decimals, eps = 10 ** -14) {
 	let result;
 	if (decimals > 0) {
-		if (decimals === 15) {result = floatnum;}
-		else {result = Math.round(floatnum * Math.pow(10, decimals) + eps) / Math.pow(10, decimals);}
-	} else {result =  Math.round(floatnum);}
+		if (decimals === 15) { result = floatnum; }
+		else { result = Math.round(floatnum * Math.pow(10, decimals) + eps) / Math.pow(10, decimals); }
+	} else { result = Math.round(floatnum); }
 	return result;
 }
 
@@ -320,8 +320,8 @@ module.exports = null;
 
 function require(script) { // Must be path relative to this file, not the parent one
 	let newScript = script;
-	['helpers-external', 'main', 'examples', 'buttons'].forEach((folder) => {newScript.replace(new RegExp('^\\.\\\\' + folder + '\\\\', 'i'), '..\\' + folder + '\\');});
-	['helpers'].forEach((folder) => {newScript.replace(new RegExp('^\\.\\\\' + folder + '\\\\', 'i'), '');});
+	['helpers-external', 'main', 'examples', 'buttons'].forEach((folder) => { newScript.replace(new RegExp('^\\.\\\\' + folder + '\\\\', 'i'), '..\\' + folder + '\\'); });
+	['helpers'].forEach((folder) => { newScript.replace(new RegExp('^\\.\\\\' + folder + '\\\\', 'i'), ''); });
 	include(newScript + '.js');
 	return module.exports;
 }
@@ -331,8 +331,8 @@ const debounce = (fn, delay, immediate = false, parent = this) => {
 	return (...args) => {
 		const boundFunc = fn.bind(parent, ...args);
 		clearTimeout(timerId);
-		if (immediate && !timerId) {boundFunc();}
-		const calleeFunc = immediate ? () => {timerId = null;} : boundFunc;
+		if (immediate && !timerId) { boundFunc(); }
+		const calleeFunc = immediate ? () => { timerId = null; } : boundFunc;
 		timerId = setTimeout(calleeFunc, delay);
 		return timerId;
 	};
@@ -342,10 +342,10 @@ const throttle = (fn, delay, immediate = false, parent = this) => {
 	let timerId;
 	return (...args) => {
 		const boundFunc = fn.bind(parent, ...args);
-		if (timerId) {return;}
-		if (immediate && !timerId) {boundFunc();}
+		if (timerId) { return; }
+		if (immediate && !timerId) { boundFunc(); }
 		timerId = setTimeout(() => {
-			if(!immediate) {
+			if (!immediate) {
 				boundFunc();
 			}
 			timerId = null;
@@ -388,7 +388,7 @@ FbTitleFormat.prototype.EvalWithMetadbsAsync = function EvalWithMetadbsAsync(han
 					const iItems = new FbMetadbHandleList(items.slice((i - 1) * slice, i === total ? count : i * slice));
 					tags.push(...this.EvalWithMetadbs(iItems));
 					const progress = Math.round(i / total * 100);
-					if (progress % 25 === 0 && progress > prevProgress) {prevProgress = progress; console.log('EvalWithMetadbsAsync ' + _p(this.Expression) + ' ' + progress + '%.');}
+					if (progress % 25 === 0 && progress > prevProgress) { prevProgress = progress; console.log('EvalWithMetadbsAsync ' + _p(this.Expression) + ' ' + progress + '%.'); }
 					resolve('done');
 				}, 25);
 			});
@@ -423,9 +423,9 @@ function _button({
 	x, y, w, h,
 	isVisible = (time, timer) => this.hover || Date.now() - time < (timer || this.timer),
 	notVisibleMode = 'invisible', // invisible | alpha
-	lbtnFunc = () => void(0),
-	lbtnDblFunc = () => void(0),
-	rbtnFunc = () => void(0),
+	lbtnFunc = () => void (0),
+	lbtnDblFunc = () => void (0),
+	rbtnFunc = () => void (0),
 	scrollSpeed = 60, // ms
 	scrollSteps = 3, // ms
 	timer = 1500, // ms
@@ -434,7 +434,7 @@ function _button({
 	iDoubleClickTimer = 250, // ms
 } = {}) {
 	this.paint = (gr, color) => {
-		if (this.w <= 0) {return;}
+		if (this.w <= 0) { return; }
 		// Smooth visibility switch
 		let bLastStep = false;
 		if (this.isVisible && !this.isVisible(this.time, this.timer)) {
@@ -450,20 +450,20 @@ function _button({
 				}
 			}
 		}
-		if (!this.hover) {color = RGBA(...toRGB(color), getBrightness(...toRGB(color)) < 50 ? 100 : 25);}
+		if (!this.hover) { color = RGBA(...toRGB(color), getBrightness(...toRGB(color)) < 50 ? 100 : 25); }
 		gr.SetTextRenderingHint(4);
 		const text = this.text && this.text.constructor && this.text.call && this.text.apply ? this.text.call(this, this) : this.text; // NOSONAR [support both this]
 		gr.DrawString(text, this.font, color, this.x, this.y, this.w, this.h, SF_CENTRE);
 		gr.SetTextRenderingHint(0);
-		if (!bLastStep && this.isVisible) {this.repaint(this.timer);} // Smooth visibility switch
+		if (!bLastStep && this.isVisible) { this.repaint(this.timer); } // Smooth visibility switch
 	};
 	const debounced = {
 		[this.timer]: debounce(window.RepaintRect, this.timer, false, window)
 	};
 	this.repaint = (timeout = 0) => {
-		if (timeout === 0) {window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h);}
+		if (timeout === 0) { window.RepaintRect(this.x, this.y, this.x + this.w, this.y + this.h); }
 		else {
-			if (!Object.hasOwn(debounced, timeout)) {debounced[timeout] = debounce(window.RepaintRect, timeout, false, window);}
+			if (!Object.hasOwn(debounced, timeout)) { debounced[timeout] = debounce(window.RepaintRect, timeout, false, window); }
 			debounced[timeout](this.x, this.y, this.x + this.w, this.y + this.h, true);
 		}
 	};
@@ -476,13 +476,13 @@ function _button({
 			window.SetCursor(IDC_HAND);
 			this.hover = true;
 			if (this.hover && this.tt) {
-				if (this.tooltip.Text) {this.tooltip.Deactivate();}
+				if (this.tooltip.Text) { this.tooltip.Deactivate(); }
 				this.tooltip.SetValue(this.tt, true);
 			}
 			return true;
 		} else {
-			if (this.tooltip.Text) {this.tooltip.SetValue(null);}
-			if (this.bTimerOnVisible && this.isVisible()) {this.time = Date.now();}
+			if (this.tooltip.Text) { this.tooltip.SetValue(null); }
+			if (this.bTimerOnVisible && this.isVisible()) { this.time = Date.now(); }
 			this.hover = this.bDown = false;
 			return false;
 		}
@@ -490,7 +490,7 @@ function _button({
 	let downFunc = null;
 	let draggingTime = 0;
 	this.lbtn_down = (x, y, mask, parent) => {
-		if (!this.scrollSpeed) {return false;}
+		if (!this.scrollSpeed) { return false; }
 		if (this.trace(x, y)) {
 			this.bHover = true;
 			if (this.bHover) {
@@ -499,7 +499,7 @@ function _button({
 					draggingTime = 0;
 					downFunc = setInterval(() => {
 						if (this.bDown) {
-							const delta = 1 + (draggingTime > this.scrollSpeed * 3 ? Math.log(draggingTime / this.scrollSpeed)* this.scrollSteps : 0);
+							const delta = 1 + (draggingTime > this.scrollSpeed * 3 ? Math.log(draggingTime / this.scrollSpeed) * this.scrollSteps : 0);
 							this.lbtnFunc.call(parent, x, y, mask, parent, delta);
 							this.repaint();
 						}
@@ -516,7 +516,7 @@ function _button({
 	};
 	this.lbtn_up = (x, y, mask, parent) => {
 		this.bDown = false;
-		if (downFunc) {clearInterval(downFunc); downFunc = null; draggingTime = 0;}
+		if (downFunc) { clearInterval(downFunc); downFunc = null; draggingTime = 0; }
 		if (this.trace(x, y)) {
 			if (this.lbtnFunc) {
 				if (!this.bDblClk) {
@@ -525,7 +525,7 @@ function _button({
 					} else {
 						this.timeoutLclk = setTimeout(() => this.lbtnFunc(x, y, mask, 1), this.iDoubleClickTimer);
 					}
-				} else {this.bDblClk = false;}
+				} else { this.bDblClk = false; }
 			}
 			return true;
 		} else {
@@ -548,7 +548,7 @@ function _button({
 	};
 	this.lbtn_dblclk = (x, y, mask, parent) => {
 		if (this.trace(x, y)) {
-			if (!this.hover || !this.isVisible()) {return false;}
+			if (!this.hover || !this.isVisible()) { return false; }
 			else if (this.lbtnDblFunc) {
 				if (parent) {
 					this.lbtnDblFunc.call(parent, x, y, mask, parent);
@@ -579,7 +579,7 @@ function _button({
 	this.rbtnFunc = rbtnFunc;
 	this.tt = tt;
 	this.font = _gdiFont('FontAwesome', this.h);
-	this.tooltip = new _tt(null, void(0), void(0), 600);
+	this.tooltip = new _tt(null, void (0), void (0), 600);
 	this.time = Date.now();
 	this.timer = timer;
 	this.bDblClk = false;
