@@ -9,6 +9,7 @@
 
 ## [Unreleased][]
 ### Added
+- 'graphSpecs' object argument to set graph type specifics variables. Currently only used for timeline to center X-label ticks ('graphSpecs.timeline.bAxisCenteredX').
 - 'chroma.interpolation' for chroma schemes, now set to 'lrgb' by default. See [available modes here](https://regorxxx.github.io/chroma.js/#scalemode).
 - 'graph.pointAlpha' to set transparency for data points on all chart types.
 - '09_statistics.js' new example showing a timeline per artist/# tracks.
