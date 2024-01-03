@@ -1,44 +1,44 @@
 ﻿'use strict';
 //21/06/22
 
-/* 
+/*
 	Contextual Menu helper v2.1.0
 	Helper to create contextual menus on demand on panels without needing to create specific methods for
 	every script, calculate IDs, etc. Menus are pushed to a list and created automatically, linking the entries
 	to their idx without needing a 'switch' block or leaving holes to ensure idx get enough numbers to expand the script.
 	The main utility of this helper is greatly reducing coding for simple menus and having both, the menu logic creation
 	and the menus' functions on the same place. Creation order is done following entry/menus addition.
-	
+
 	Methods:
 		_menu({bSupressDefaultMenu: true, idxInitial: 0})
-			-bSupressDefaultMenu:	Suppress the default context menu. left shift + left windows key will bypass it. 
+			-bSupressDefaultMenu:	Suppress the default context menu. left shift + left windows key will bypass it.
 			-idxInitial:			Specifies an initial idx to create menus (useful to concatenate multiple menus objects)
-			
+
 		.btn_up(x, y, [object])
-			-NOTE: 		Called within callbacks to create the menu. Specifying an object or array of objects (like another menu instances), 
+			-NOTE: 		Called within callbacks to create the menu. Specifying an object or array of objects (like another menu instances),
 						lets you concatenate multiple menus. Uses object.btn_up() and object.btn_up_done() on manually added entries
 		.getMainMenuName()
 			-NOTE:		Used to get the key of the main menu. Useful to concatenate multiple menus.
-	
+
 		.newMenu(menuName = 'main', subMenuFrom = 'main')
-			-menuName:	Specifies the menu name or submenus names. 
+			-menuName:	Specifies the menu name or submenus names.
 			-NOTE:		Menu is called 'main' when it's called without an argument.
 			-NOTE:		Every menu created will be appended to the main menu, unless provided another 'subMenuFrom' value.
-			
+
 		.newEntry({entryText: null, func: null, menuName: menuArr[0], flags: MF_STRING})
 			-entryText: new menu entry text. Using 'sep' or 'separator' adds a dummy separator.
 			-func: 		function associated to that entry
 			-menuName:	to which menu/submenu the entry is associated. Uses main menu when not specified
-			-flags:		flags for the text 
+			-flags:		flags for the text
 			-NOTE:		All arguments (but 'func') may be a variable or a function (evaluated when creating the menu)
-		
+
 		.newCheckMenu(menuName, entryTextA, entryTextB, idxFunc)
 			-menuName:	to which menu/submenu the check is associated
 			-entryTextA:From entry A (idx gets calculated automatically)
 			-entryTextB:To entry B (idx gets calculated automatically)
 			-idxFunc:	Logic to calculate the offset. i.e. EntryA and EntryB differ by 5 options, idxFunc must return values between 0 and 5.
 			-NOTE:		All arguments (but 'idxFunc') may be a variable or a function (evaluated when creating the menu)
-			
+
 		.newCondEntry({entryText: '', condFunc})
 			-condFunc:	Function called on .btn_up()
 			-entryText: Just for information
@@ -46,9 +46,6 @@
 						You may use any other method like .newMenu(), .newEntry(), etc. within condFunc. Thus creating menus only if required.
 	Usage:
 		See examples folder.
-						
-	TODO:
-		- Add invisible IDs to entries names (?)
  */
 
 include(fb.ComponentPath + 'docs\\Flags.js');
@@ -57,24 +54,24 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 	let menuArrTemp = [];
 	let menuArr = [];
 	let menuMap = new Map();
-	
+
 	let entryArrTemp = [];
 	let entryArr = [];
-	
+
 	let checkMenuArr = [];
 	let checkMenuArrTemp = [];
-	
+
 	let checkMenuMap = new Map();
 	let entryMap = new Map();
 	let entryMapInverted = new Map();
 	let idxMap = new Map();
 	let idx = 0;
-	
+
 	this.properties = properties; // To simplify usage along other scripts
 	this.lastCall = '';
-	
+
 	const eTypeToStr = ['number', 'boolean', 'object']; // Variable types converted to string for menu and entry names
-	
+
 	// To retrieve elements
 	this.getNumEntries = () => {return entryArr.length;};
 	this.getEntries = () => {return [...entryArr];}; // To get all menu entries, but those created by conditional menus are not set yet!
@@ -82,7 +79,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 	this.getMenus = () => {return [...menuArr];};
 	this.getMainMenuName = () => {return menuArr[0].menuName;};
 	this.hasMenu = (menuName, subMenuFrom = '') => {return (menuArr.findIndex((menu) => {return menu.menuName === menuName && (subMenuFrom.length ? menu.subMenuFrom === subMenuFrom : true);}) !== -1);};
-	
+
 	// To create new elements
 	this.newMenu = (menuName = 'main', subMenuFrom = 'main', flags = MF_STRING) => {
 		const mType = typeof menuName, smType = typeof subMenuFrom;
@@ -99,7 +96,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 		return menuName;
 	};
 	this.newMenu(); // Default menu
-	
+
 	this.newEntry = ({entryText = '', func = null, menuName = menuArr[0].menuName, flags = MF_STRING}) => {
 		const eType = typeof entryText, mType = typeof menuName;
 		if (eTypeToStr.indexOf(eType) !== -1) {entryText = entryText.toString();}
@@ -109,7 +106,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 		entryArr.push({entryText, func, menuName, flags, bIsMenu: false});
 		return entryArr[entryArr.length -1];
 	};
-	
+
 	this.newCheckMenu = (menuName = this.getMainMenuName(), entryTextA = '', entryTextB = null, idxFun) => {
 		const mType = typeof menuName, eAType = typeof entryTextA, eBType = typeof entryTextB;
 		if (eTypeToStr.indexOf(mType) !== -1) {menuName = menuName.toString();}
@@ -120,26 +117,26 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 		if (mType === 'string' && menuName.indexOf('&') !== - 1) {menuName = menuName.replace(/&&/g,'&').replace(/&/g,'&&');}
 		checkMenuArr.push({menuName, entryTextA, entryTextB, idxFun});
 	};
-	
+
 	this.newCondEntry = ({entryText = '', condFunc}) => {
 		if (eTypeToStr.indexOf(typeof entryText) !== -1) {entryText = entryText.toString();}
 		entryArr.push({entryText, condFunc});
 		return entryArr[entryArr.length -1];
 	};
-	
+
 	// <-- Internal
 	this.getMenu = (menuName) => {return (!menuName) ? menuMap : menuMap.get(menuName);};
 	this.getIdx = (menuNameEntryText) => {return (!menuNameEntryText) ? entryMap : entryMap.get(menuNameEntryText);};
 	this.getEntry = (idx) => {return (typeof idx === 'undefined' || idx === -1) ? entryMapInverted : entryMapInverted.get(idx);};
 	this.getEntryFunc = (idx) => {return (typeof idx === 'undefined' || idx === -1) ? idxMap : idxMap.get(idx);};
 	this.getCheckMenu = (menuName) => {return (!menuName) ? checkMenuMap : checkMenuMap.get(menuName);};
-	
+
 	this.createMenu = (menuName = menuArr[0].menuName) => {
 		if (isFunction(menuName)) {menuName = menuName();}
 		menuMap.set(menuName, window.CreatePopupMenu());
 		return menuMap.get(menuName);
 	};
-	
+
 	this.addToMenu = ({entryText = null, func = null, menuName = menuArr[0].menuName, flags = MF_STRING}) => {
 		if (entryText === 'sep' || entryText === 'separator') {menuMap.get(menuName).AppendMenuSeparator();}
 		else {
@@ -186,7 +183,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 			idxMap.set(idx, func);
 		}
 	};
-	
+
 	this.checkMenu = (menuName, entryTextA, entryTextB, idxFunc) => {
 		if (isFunction(menuName)) {menuName = menuName();}
 		if (isFunction(entryTextA)) {entryTextA = entryTextA();}
@@ -203,11 +200,11 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 			});
 		}
 	};
-	
+
 	this.concat = (menuObj) => {
 		entryArr = entryArr.concat(menuObj.getEntries());
 	};
-	
+
 	this.initMenu = (object, bindArgs = null /*{pos: -1, args: null}*/) => {
 		entryArrTemp = [...entryArr]; // Create backup to restore later
 		menuArrTemp = [...menuArr];
@@ -275,7 +272,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 		return manualMenuArr;
 	};
 	// -->
-	
+
 	// Used to call the menus on callbacks, etc.
 	this.btn_up = (x, y, object, forcedEntry = '', bExecute = true, replaceFunc = null, flag = 0, bindArgs = null /*{pos: -1, args: null}*/) => {
 		// Recreate menu(s)
@@ -314,7 +311,7 @@ function _menu({bSupressDefaultMenu = true, /*idxInitial = 0,*/ properties = nul
 		this.clear();
 		return bSupressDefaultMenu;
 	};
-	
+
 	this.clear = (bForce = false) => {
 		// These should be always cleared and created again on every call
 		menuMap.clear();
@@ -356,7 +353,7 @@ function isArray(checkKeys) {
 }
 
 function menuError({} = {}) {
-	if (console.popup) {console.popup(Object.entries(...arguments).map((_) => {return _.join(': ');}).join('\n'), 'Menu');} 
+	if (console.popup) {console.popup(Object.entries(...arguments).map((_) => {return _.join(': ');}).join('\n'), 'Menu');}
 	else {Object.entries(...arguments).map((_) => {return _.join(': ');}).forEach((arg) => {console.log(arg);});}
 }
 
