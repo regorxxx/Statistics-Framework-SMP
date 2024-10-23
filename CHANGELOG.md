@@ -44,6 +44,7 @@
 - Optimized repainting to use less resources.
 ### Removed
 ### Fixed
+- UI: axis colors not drawn when using a background color without dynamic colors enabled. It only affected the examples files.
 - Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
 - Improved color checking for bad inputs.
 - Improved data checking for bad inputs.
