@@ -1,5 +1,5 @@
 ﻿'use strict';
-//21/08/23
+//09/08/24
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
@@ -29,7 +29,7 @@ function getData(option = 'tf', tf = 'genre') {
 				if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
 				else {tagCount.set(tag, tagCount.get(tag) + 1);}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 		case 'most played': {
@@ -41,7 +41,7 @@ function getData(option = 'tf', tf = 'genre') {
 				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
 				else {tagCount.set(tag, tagCount.get(tag) + Number(playCount[i]));}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 		case 'most played proportional': {
@@ -59,7 +59,7 @@ function getData(option = 'tf', tf = 'genre') {
 			keyCount.forEach((value, key) => {
 				if (tagCount.has(key)) {tagCount.set(key, Math.round(tagCount.get(key) / keyCount.get(key)));}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 	}
@@ -104,7 +104,7 @@ const chartA = new _chart({
 const chartB = new _chart({
 	...defaultConfig,
 	data: getData('tf', 'style'),
-	graph: {type: 'scatter', borderWidth: _scale(3), point: 'crux'},
+	graph: {type: 'scatter', borderWidth: _scale(3), point: 'cross'},
 	axis: {
 		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'style'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'tracks'}

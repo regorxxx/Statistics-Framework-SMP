@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/08/23
+//09/08/24
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
@@ -29,7 +29,7 @@ function getData(option = 'tf', tf = 'genre') {
 				if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
 				else {tagCount.set(tag, tagCount.get(tag) + 1);}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 		case 'most played': {
@@ -41,7 +41,7 @@ function getData(option = 'tf', tf = 'genre') {
 				if (!tagCount.has(tag)) {tagCount.set(tag, Number(playCount[i]));}
 				else {tagCount.set(tag, tagCount.get(tag) + Number(playCount[i]));}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 		case 'most played proportional': {
@@ -59,7 +59,7 @@ function getData(option = 'tf', tf = 'genre') {
 			keyCount.forEach((value, key) => {
 				if (tagCount.has(key)) {tagCount.set(key, Math.round(tagCount.get(key) / keyCount.get(key)));}
 			});
-			data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+			data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 			break;
 		}
 	}
@@ -138,8 +138,8 @@ const newConfig = [
 */
 const rows = newConfig.length;
 const columns = newConfig[0].length;
-const nCharts = new Array(rows).fill(1).map((row) => {return new Array(columns).fill(1);}).map((row, i) => {
-	return row.map((cell, j) => {
+const nCharts = Array.from({length: rows}, (row, i) => {
+	return Array.from({length: columns}, (cell, j) => {
 		const w = window.Width / columns;
 		const h = window.Height / rows * (i + 1);
 		const x = w * j;

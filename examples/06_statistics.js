@@ -1,12 +1,12 @@
 ﻿'use strict';
-//21/08/23
+//09/08/24
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
 
 window.DefinePanel('Statistics example 5', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
-/* 
+/*
 	In this example only one serie and one chart are drawn. 15 Top genres.
 	Data is passed async, so the chart is reloaded when all data is calculated.
 */
@@ -42,7 +42,7 @@ async function getDataAsync(tf = 'GENRE') {
 		if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
 		else {tagCount.set(tag, tagCount.get(tag) + 1);}
 	});
-	data = [[...tagCount].map((point) => {return {x: point[0], y: point[1]};})];
+	data = [Array.from(tagCount, (point) => {return {x: point[0], y: point[1]};})];
 	return data;
 }
 
@@ -53,7 +53,7 @@ const chart = new _chart({
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'Genre'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'Genre'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 100, labels: true, key: 'Tracks'}
 	},
 	x: 0,
@@ -64,7 +64,7 @@ const chart = new _chart({
 	tooltipText: '\n\n(15 top genres)'
 });
 
-/* 
+/*
 	Callbacks
 */
 function on_paint(gr) {
@@ -89,7 +89,7 @@ function on_mouse_leave(x, y, mask) {
 	chart.leave();
 };
 
-/* 
+/*
 	Bind menu
 */
 

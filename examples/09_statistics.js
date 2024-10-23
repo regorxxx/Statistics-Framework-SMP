@@ -1,15 +1,15 @@
 ﻿'use strict';
-//24/10/23
+//09/08/24
 
 include('..\\main\\statistics\\statistics_xxx.js');
 include('..\\main\\statistics\\statistics_xxx_menu.js');
 
 window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
 
-/* 
+/*
 	Data to feed the charts:
 	This may be arbitrary data in a single series, with each point having x,y,z properties.
-	[	
+	[
 		[
 			[{x1, y11, z11}, ...],
 			[{x2, y21, z21}, ...],
@@ -28,7 +28,7 @@ window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.0.0', feat
 			...
 		]
 	]
-	
+
 	In this example a timeline is shown..
 */
 function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
@@ -56,7 +56,7 @@ function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 			dic.forEach((value, key, map) => {
 				map.set(key, Object.entries(value).map((pair) => {return {key: pair[0], count: pair[1]};}).sort((a, b) => {return b.count - a.count;}));
 			})
-			data = [[...dic].map((points) => points[1].map((point) => {return {x: points[0], y: point.count, z: point.key};}))];
+			data = [Array.from(dic, (points) => points[1].map((point) => {return {x: points[0], y: point.count, z: point.key};}))];
 			break;
 		}
 	}
@@ -64,12 +64,12 @@ function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 }
 
 
-/* 
+/*
 	Set the configuration for all charts using a default template and a table
 	Colors are not being set. One should be required per serie.
 	color: [rgbSerie1, ...]
-	
-	In this example only one serie is drawn at the same time, except the first one. 
+
+	In this example only one serie is drawn at the same time, except the first one.
 	Any color not set is set randomly at startup.
 */
 const defaultConfig = {
@@ -78,7 +78,7 @@ const defaultConfig = {
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, bAltLabels: true}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, bAltLabels: true},
 		y: {show: false, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true}
 	},
 	x: 0,
@@ -97,20 +97,20 @@ const newConfig = [
 			dataManipulation: {sort: (a, b) => {return a.x - b.x;}, group: 2},
 			graph: {type: 'timeline', multi: true, borderWidth: _scale(1)},
 			axis:{
-				x: {key: 'Date'}, 
+				x: {key: 'Date'},
 				y: {key: 'Tracks'}
 			}
 		},
 	]
 ];
 
-/* 
+/*
 	Automatically draw new graphs using table above
 */
 const rows = newConfig.length;
 const columns = newConfig[0].length;
-const nCharts = new Array(rows).fill(1).map((row) => {return new Array(columns).fill(1);}).map((row, i) => {
-	return row.map((cell, j) => {
+const nCharts = Array.from({length: rows}, (row, i) => {
+	return Array.from({length: columns}, (cell, j) => {
 		const w = window.Width / columns;
 		const h = window.Height / rows * (i + 1);
 		const x = w * j;
@@ -122,7 +122,7 @@ const nCharts = new Array(rows).fill(1).map((row) => {return new Array(columns).
 const charts = nCharts.flat(Infinity);
 charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
 
-/* 
+/*
 	Callbacks
 */
 function on_paint(gr) {
