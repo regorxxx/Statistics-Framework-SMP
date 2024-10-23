@@ -1,5 +1,5 @@
 ﻿'use strict';
-//24/12/23
+//09/08/24
 
 /* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports */
 /* global folders:readable */
@@ -256,7 +256,7 @@ Array.prototype.schwartzianSort = function (processFunc, sortFunc = (a, b) => a[
 	return this.map((x) => [x, processFunc(x)]).sort(sortFunc).map((x) => x[0]); // NOSONAR
 };
 
-const range = (start, stop, step) => new Array(Math.round((stop - start) / step + 1)).fill(void (0)).map((_, i) => start + (i * step));
+const range = (start, stop, step) => Array.from({ length: Math.round((stop - start) / step + 1) }, (_, i) => start + (i * step));
 
 // Adds/subtracts 'offset' to 'reference' considering the values must follow cyclic logic within 'limits' range (both values included)
 // Ex: [1,8], x = 5 -> x + 4 = 1 <=> cyclicOffset(5, 4, [1,8])
