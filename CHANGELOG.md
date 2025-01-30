@@ -9,6 +9,7 @@
 
 ## [Unreleased][]
 ### Added
+- UI: 'fill' chart type.
 - 'graphSpecs' object argument to set graph type specifics variables. Currently only used for timeline to center X-label ticks ('graphSpecs.timeline.bAxisCenteredX').
 - 'chroma.interpolation' for chroma schemes, now set to 'lrgb' by default. See [available modes here](https://regorxxx.github.io/chroma.js/#scalemode).
 - 'graph.pointAlpha' to set transparency for data points on all chart types.
@@ -22,6 +23,9 @@
 - 'graph.multi' variable to display aggregated data per X-value, i.e. effectively displaying 3-dimensional data. For ex. number of tracks (Y) per Artist (Z) per Year (X), where artists will be grouped per year. This type of data is better displayed on bar graphs. Data should be passed with this schema: [[[{x1, y11, z11}, ...],[{x2, y21, z21}, ...], ...]], where a single serie contains multiple X-planes, each one being an array of points with same X-value. The framework will automatically manipulate the data to display the X-points of every X-plane array on different series. In case the X-plane arrays don't have the same number of points, output series may have different length, which is now handled by the 'bSlicePerKey' config above.
 - Built-in 'natural', 'reverse', 'string natural', 'string reverse', 'random' (Fisher-Yates algorithm), 'radix' (https://github.com/aldo-gutierrez/bitmasksorterJS), 'radix reverse', 'radix int', 'radix int reverse' sorting methods, by setting dataManipulation.sort to those labels.
 - 'dataManipulation.sort' may be assigned to an axis by adding the string method along the axis. For ex. 'natural|x' or 'reverse|y'. Note it's limited to a single axis. For more complex sorting just provide a function.
+	+ Data: added setting to change how the Z-groups are sorted within the group (independently from the global data).
+	+ Data: added setting to filter Z-groups points to either show all or non-zero values (on Y axis).
+	+ Data: sorting routines have been changed and now multiple sorting is allowed (by every axis).
 - 'dataManipulation.sort' function may now be a method present on the array prototype, like: ```dataManipulation.sort = Array.prototype.shuffle;``` instead of a compare function  used within .sort().
 - 'dataManipulation.sort' function may be added as a pair [function, [args]], where the function is a method on array prototype and args is passed as array[function](...args). This may is usually used along Schwartzian transform for sorting; in fact the method is built-in and can be called with ```dataManipulation.sort = ['Schwartzian transform', [(point) => processPoint(point)]];``` or ```dataManipulation.sort = [Array.prototype.schwartzianSort, [(point) => processPoint(point)]];```, being equivalent. The second argument for the sorting method is the compare function, provided by default as natural sorting for numbers. Change as required for strings (for. ex. using localeCompare()).
 - Scroll, zoom, settings and display settings buttons have been added; enabled by setting ```buttons = {xScroll: true , settings: true, display: true}```. Functionality is defined by ```callbacks = {settings: {/* onLbtnUp, onDblLbtn, onRbtnUp */}, display: {/* onLbtnUp, onDblLbtn, onRbtnUp */}}```. Scroll and zoom functionality is internally handled by default.
@@ -42,9 +46,14 @@
 - Series may now have different X-values and be drawn properly. i.e. not all X-keys must be present on every serie. In the case of 'lines' graph types, it will produce discontinuous lines.
 - Replaced library [chroma.js with own version](https://regorxxx.github.io/chroma.js/).
 - Optimized repainting to use less resources.
+- Multiple improvements and new exposed settings to display menu
+- Improved contrast between label backgrounds and text, using WCAG contrast ratio now. Previously it just inverted the label color to B&W.
+- 'bars' and 'lines' chart types fallback to 'scatter' if the serie to drawn contains a single point, previously nothing was drawn.
+- buttons are now smoothly hidden when panel is not on focus. Transparency may be adjusted from 0 to 255 by setting buttons.alpha, timer to hide them by setting buttons.timer.
+- Scroll buttons are now only shown if the chart can be scrolled in such direction.
 ### Removed
 ### Fixed
-- UI: axis colors not drawn when using a background color without dynamic colors enabled. It only affected the examples files.
+- Axis colors not drawn when using a background color without dynamic colors enabled. It only affected the examples files.
 - Points from different series on scatter and line charts were not selectable via mouse, only the first serie. Now are selected by the Y mouse position.
 - Improved color checking for bad inputs.
 - Improved data checking for bad inputs.
@@ -53,6 +62,10 @@
 - Fixed some setting not being set in some cases while using the menu.
 - Multiple minor UI fixes.
 - Crash opening menu when palettes have been set to not use only colorblind schemes.
+- Fixed wrong highlighting for scatter charts, it was smaller by a few px in some cases on both axis.
+- Fixed last label background not being properly adjusted in some cases for 'bars', 'lines' and 'scatter' charts.
+- Fixed minor UI background highlighting glitch when mouse was over a button but also over a point.
+- Minor x-position fix on timeline and bars charts.
 - Minor fixes.
 
 ## [0.3.1] - 2023-08-24
