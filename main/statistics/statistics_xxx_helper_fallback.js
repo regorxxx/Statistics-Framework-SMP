@@ -1,5 +1,5 @@
 ﻿'use strict';
-//28/11/24
+//11/03/25
 
 /* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports, memoryPrint, Input, isArrayEqual */
 /* global folders:readable */
@@ -32,7 +32,7 @@ function _scale(size, bRound = true) {
 	if (!scaleDPI[size]) {
 		let DPI;
 		try { DPI = WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI'); }
-		catch (e) { DPI = 96; } // Fix for linux
+		catch (e) { DPI = 96; } // eslint-disable-line no-unused-vars
 		scaleDPI[size] = size * DPI / 72;
 	}
 	return (bRound ? Math.round(scaleDPI[size]) : scaleDPI[size]);
@@ -310,10 +310,14 @@ Array.prototype.shuffle = function () { // NOSONAR
 // https://github.com/aldo-gutierrez/bitmasksorterJS
 const bitmask = require('..\\helpers-external\\bitmasksorterjs\\bitmasksorterjs');
 Array.prototype.radixSort = function (bReverse = false, start, end) { // NOSONAR
-	return bReverse ? bitmask.sortNumber.call(this, this, start, end).reverse() : bitmask.sortNumber.call(this, this, start, end);
+	return bReverse //NOSONAR
+		? bitmask.sortNumber.call(this, this, start, end).reverse()
+		: bitmask.sortNumber.call(this, this, start, end);
 };
 Array.prototype.radixSortInt = function (bReverse = false, start, end) { // NOSONAR
-	return bReverse ? bitmask.sortInt.call(this, this, start, end).reverse() : bitmask.sortInt.call(this, this, start, end);
+	return bReverse //NOSONAR
+		? bitmask.sortInt.call(this, this, start, end).reverse()
+		: bitmask.sortInt.call(this, this, start, end);
 };
 
 // https://en.wikipedia.org/wiki/Schwartzian_transform
@@ -362,7 +366,7 @@ function _q(value) {
 }
 
 function _qCond(tag, bUnquote = false) {
-	return bUnquote
+	return bUnquote //NOSONAR
 		? tag.replace(/(^")(?:.*\$+.*)("$)/g, '')
 		: tag.includes('$')
 			? _q(tag)
@@ -824,7 +828,7 @@ const Input = Object.seal(Object.freeze({
 	number: function (type, oldVal, message, title, example, checks = []) {
 		const types = new Set(['int', 'int positive', 'int negative', 'float', 'float positive', 'float negative', 'real', 'real positive', 'real negative']);
 		this.data.last = oldVal; this.data.lastInput = null;
-		if (type && type.length) { type.replace('/integer/gi', 'int'); }
+		if (type && type.length) { type = type.replace('/integer/gi', 'int'); }
 		if (!types.has(type)) { throw new Error('Invalid type: ' + type); }
 		let input, newVal;
 		try {
@@ -968,7 +972,7 @@ const Input = Object.seal(Object.freeze({
 			try { // Sanity check
 				fb.GetQueryItems(new FbMetadbHandleList(), newVal);
 				fb.GetQueryItems(new FbMetadbHandleList(), '* HAS \'\' AND (' + newVal + ')');
-			} catch (e) { throw new Error('Invalid query'); }
+			} catch (e) { throw new Error('Invalid query'); } // eslint-disable-line no-unused-vars
 			if (bFilterEmpty && fb.GetQueryItems(fb.GetLibraryItems(), newVal).Count === 0) { throw new Error('Zero items query'); }
 			if (checks && checks.length && !checks.some((check) => check.call(this, newVal))) {
 				throw new Error('Invalid checks');
