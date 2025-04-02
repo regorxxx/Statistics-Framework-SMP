@@ -35,6 +35,7 @@
 - Zoom functionality using the mouse wheel, which slices the data range to be smaller/bigger.
 - Scroll functionality using mouse dragging while clicking, which slices the data to the left/right (not changing the range size).
 ### Changed
+- Labels text is now split by '|', hidding anything after that. This is done so additional IDs may be used after that char at axis TF for deduplication purposes (for ex. artists with same name but different MusicBrainz Id).
 - Sorting is now set by default to 'natural|x' when changing from distributions to standard graphs, unless a specific sorting method is provided. Sorting is forced to null when switching to distributions.
 - 'tooltipText' may now be a function or a string. tooltipText(point, serieIdx).
 - Adjusted mouse cursor over specific elements.
