@@ -1,10 +1,13 @@
 ﻿'use strict';
-//09/08/24
+//18/11/25
 
 include('..\\main\\statistics\\statistics_xxx.js');
+/* global _chart:readable */
+/* global RGB:readable, _scale:readable, _bt:readable */
 include('..\\main\\statistics\\statistics_xxx_menu.js');
+/* global createStatisticsMenu:readable, _menu:readable */
 
-window.DefinePanel('Statistics example 3', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
+window.DefinePanel('Statistics example 3', {author:'XXX', version: '1.1.0', features: {drag_n_drop: false}});
 
 /*
 	Data to feed the charts:
@@ -23,7 +26,7 @@ function getData(option = 'tf', tf = 'genre') {
 	switch (option) {
 		case 'tf': {
 			const handleList = fb.GetLibraryItems();
-			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => {return val.split(',')}).flat(Infinity);
+			const libraryTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => val.split(',')).flat(Infinity);
 			const tagCount = new Map();
 			libraryTags.forEach((tag) => {
 				if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
@@ -146,7 +149,7 @@ const nCharts = Array.from({length: rows}, (row, i) => {
 	});
 });
 const charts = nCharts.flat(Infinity);
-charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
+charts.forEach((chart) => _menu.bindInstance(chart, createStatisticsMenu)); // Binds the generic right click menu to every chart
 
 /*
 	Callbacks
@@ -174,14 +177,14 @@ function on_size() {
 
 function on_mouse_move(x, y, mask) {
 	if (!window.ID) {return;}
-	const bFound = charts.some((chart) => {return chart.move(x,y);});
+	charts.some((chart) => chart.move(x,y));
 }
 
 function on_mouse_leave(x, y, mask) {
-	charts.forEach((chart) => {chart.leave();});
+	charts.forEach((chart) => chart.leave());
 }
 
 function on_mouse_rbtn_up(x, y) {
-	charts.some((chart) => {return chart.rbtn_up(x,y);});
+	charts.some((chart) => chart.rbtn_up(x,y));
 	return true; // left shift + left windows key will bypass this callback and will open default context menu.
 }

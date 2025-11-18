@@ -1,10 +1,13 @@
 ﻿'use strict';
-//09/08/24
+//18/11/25
 
 include('..\\main\\statistics\\statistics_xxx.js');
+/* global _chart:readable */
+/* global RGB:readable, _scale:readable, _bt:readable, _gdiFont:readable */
 include('..\\main\\statistics\\statistics_xxx_menu.js');
+/* global createStatisticsMenu:readable, _menu:readable */
 
-window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
+window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.1.0', features: {drag_n_drop: false}});
 
 /*
 	Data to feed the charts:
@@ -29,21 +32,21 @@ window.DefinePanel('Statistics example 9', {author:'XXX', version: '1.0.0', feat
 		]
 	]
 
-	In this example a timeline is shown..
+	In this example a timeline is shown.
 */
 function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 	let data;
 	switch (option) {
 		case 'timeline': { // 3D {x, y, z}, x and z can be exchanged
 			const handleList = query.length && query !== 'ALL' ? fb.GetQueryItems(fb.GetLibraryItems(), query) : fb.GetLibraryItems();
-			const xTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => {return val.split(',')});
-			const serieTags = fb.TitleFormat(_bt(arg)).EvalWithMetadbs(handleList).map((val) => {return val.split(',')});
+			const xTags = fb.TitleFormat(_bt(tf)).EvalWithMetadbs(handleList).map((val) => val.split(','));
+			const serieTags = fb.TitleFormat(_bt(arg)).EvalWithMetadbs(handleList).map((val) => val.split(','));
 			const dic = new Map();
 			xTags.forEach((arr, i) => {
 				arr.forEach((x) => {
 					if (!dic.has(x)) {dic.set(x, {});}
 					const val = dic.get(x);
-					serieTags[i].forEach((serie, j) => {
+					serieTags[i].forEach((serie) => {
 						if (val.hasOwnProperty(serie)) {
 							val[serie]++;
 						} else {
@@ -54,8 +57,8 @@ function getData(option = 'tf', tf = 'genre', query = 'ALL', arg) {
 				});
 			});
 			dic.forEach((value, key, map) => {
-				map.set(key, Object.entries(value).map((pair) => {return {key: pair[0], count: pair[1]};}).sort((a, b) => {return b.count - a.count;}));
-			})
+				map.set(key, Object.entries(value).map((pair) => {return {key: pair[0], count: pair[1]};}).sort((a, b) => b.count - a.count));
+			});
 			data = [Array.from(dic, (points) => points[1].map((point) => {return {x: points[0], y: point.count, z: point.key};}))];
 			break;
 		}
@@ -120,7 +123,7 @@ const nCharts = Array.from({length: rows}, (row, i) => {
 	});
 });
 const charts = nCharts.flat(Infinity);
-charts.forEach((chart) => {bindMenu(chart);}); // Binds the generic right click menu to every chart
+charts.forEach((chart) => _menu.bindInstance(chart, createStatisticsMenu)); // Binds the generic right click menu to every chart
 
 /*
 	Callbacks
@@ -146,17 +149,17 @@ function on_size() {
 	window.Repaint();
 }
 
-let prevX = null;
+
 function on_mouse_move(x, y, mask) {
 	if (!window.ID) {return;}
-	const bFound = charts.some((chart) => {return chart.move(x,y);});
+	charts.some((chart) => chart.move(x,y));
 }
 
 function on_mouse_leave(x, y, mask) {
-	charts.forEach((chart) => {chart.leave();});
+	charts.forEach((chart) => chart.leave());
 }
 
 function on_mouse_rbtn_up(x, y) {
-	charts.some((chart) => {return chart.rbtn_up(x,y);});
+	charts.some((chart) => chart.rbtn_up(x,y));
 	return true; // left shift + left windows key will bypass this callback and will open default context menu.
 }

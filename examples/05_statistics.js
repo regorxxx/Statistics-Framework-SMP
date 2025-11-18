@@ -1,42 +1,41 @@
 ﻿'use strict';
-//21/08/23
+//18/11/25
 
 include('..\\main\\statistics\\statistics_xxx.js');
+/* global _chart:readable */
+/* global RGB:readable, _scale:readable, _bt:readable */
 include('..\\main\\statistics\\statistics_xxx_menu.js');
+/* global createStatisticsMenu:readable, _menu:readable */
 
-window.DefinePanel('Statistics example 5', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
+window.DefinePanel('Statistics example 5', {author:'XXX', version: '1.1.0', features: {drag_n_drop: false}});
 
 /*
 	In this example only one serie and one chart are drawn. 15 Top genres.
 	Data is passed async, so the chart is reloaded when all data is calculated.
 */
-FbTitleFormat.prototype.EvalWithMetadbsAsync = function EvalWithMetadbsAsync(handleList) {
+FbTitleFormat.prototype.EvalWithMetadbsAsync = async function EvalWithMetadbsAsync(handleList) {
 	const size = handleList.Count;
 	const steps = 1000;
-	return new Promise(async (resolve) => {
-		const items = handleList.Convert();
-		const count = items.length;
-		const total = Math.ceil(size / steps);
-		const tags = [];
-		let prevProgress = -1;
-		for (let i = 1; i <= total; i++) {
-			await new Promise((resolve) => {
-				setTimeout(() => {
-					const iItems = new FbMetadbHandleList(items.slice((i - 1) * steps, i === total ? count : i * steps));
-					tags.push(...this.EvalWithMetadbs(iItems));
-					const progress = Math.round(i / total * 100);
-					resolve('done');
-				}, 25);
-			});
-		}
-		resolve(tags);
-	});
-}
+	const items = handleList.Convert();
+	const count = items.length;
+	const total = Math.ceil(size / steps);
+	const tags = [];
+	for (let i = 1; i <= total; i++) {
+		await new Promise((resolve) => {
+			setTimeout(() => {
+				const iItems = new FbMetadbHandleList(items.slice((i - 1) * steps, i === total ? count : i * steps));
+				tags.push(...this.EvalWithMetadbs(iItems));
+				resolve('done');
+			}, 25);
+		});
+	}
+	return tags;
+};
 
 async function getDataAsync(tf = 'GENRE') {
 	let data;
 	const handleList = fb.GetLibraryItems();
-	const libraryTags = (await fb.TitleFormat(_bt(tf)).EvalWithMetadbsAsync(handleList)).map((val) => {return val.split(',')}).flat(Infinity);
+	const libraryTags = (await fb.TitleFormat(_bt(tf)).EvalWithMetadbsAsync(handleList)).map((val) => val.split(',')).flat(Infinity);
 	const tagCount = new Map();
 	libraryTags.forEach((tag) => {
 		if (!tagCount.has(tag)) {tagCount.set(tag, 1);}
@@ -92,7 +91,7 @@ function on_mouse_leave(x, y, mask) {
 	Bind menu
 */
 
-bindMenu(chart);
+_menu.bindInstance(chart, createStatisticsMenu);
 function on_mouse_rbtn_up(x, y) {
 	chart.rbtn_up(x,y);
 	return true; // left shift + left windows key will bypass this callback and will open default context menu.

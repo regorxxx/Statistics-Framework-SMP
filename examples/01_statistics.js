@@ -1,12 +1,15 @@
 ﻿'use strict';
-//21/08/23
+//18/11/25
 
 include('..\\main\\statistics\\statistics_xxx.js');
+/* global _chart:readable */
+/* global RGB:readable, _scale:readable */
 include('..\\main\\statistics\\statistics_xxx_menu.js');
+/* global createStatisticsMenu:readable, _menu:readable */
 
-window.DefinePanel('Statistics example 1', {author:'XXX', version: '1.0.0', features: {drag_n_drop: false}});
+window.DefinePanel('Statistics example 1', {author:'XXX', version: '1.1.0', features: {drag_n_drop: false}});
 
-/* 
+/*
 	Data to feed the charts:
 	This may be arbitrary data in multiple series, with each point having x,y properties.
 	Each serie will use a different color.
@@ -15,11 +18,11 @@ window.DefinePanel('Statistics example 1', {author:'XXX', version: '1.0.0', feat
 		[{x, y}, ...], // Serie 2
 		...
 	]
-	
+
 	Colors are not being set. One should be required per serie.
 	color: [rgbSerie1, ...]
 	Any color not set is set randomly at startup.
-	
+
 	In this example only two series are drawn and one chart.
 */
 const chart = new _chart({
@@ -28,7 +31,7 @@ const chart = new _chart({
 	background: {color: RGB(200,200,200)},
 	margin: {left: _scale(20), right: _scale(10), top: _scale(10), bottom: _scale(15)},
 	axis: {
-		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'Cities'}, 
+		x: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 'auto', labels: true, key: 'Cities'},
 		y: {show: true, color: RGB(0,0,0), width: _scale(2), ticks: 5, labels: true, key: 'Population'}
 	},
 	x: 0,
@@ -39,7 +42,7 @@ const chart = new _chart({
 	tooltipText: '\n\n(This is additional info)'
 });
 
-/* 
+/*
 	Callbacks
 */
 function on_paint(gr) {
@@ -64,11 +67,11 @@ function on_mouse_leave(x, y, mask) {
 	chart.leave();
 };
 
-/* 
+/*
 	Bind menu
 */
 
-bindMenu(chart);
+_menu.bindInstance(chart, createStatisticsMenu);
 function on_mouse_rbtn_up(x, y) {
 	chart.rbtn_up(x,y);
 	return true; // left shift + left windows key will bypass this callback and will open default context menu.
