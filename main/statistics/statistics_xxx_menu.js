@@ -1,12 +1,12 @@
 ﻿'use strict';
-//20/03/25
+//06/08/25
 
 /* exported createStatisticsMenu */
 
 // Don't load this helper unless menu framework is also present
 // https://github.com/regorxxx/Menu-Framework-SMP
 try { include('..\\..\\helpers\\menu_xxx.js'); } catch (e) { // eslint-disable-line no-unused-vars
-	try { include('..\\..\\examples\\_statistics\\menu_xxx.js'); } catch (e) { fb.ShowPopupMessage('Missing menu framework file', window.Name); } // eslint-disable-line no-unused-vars
+	try { include('..\\..\\examples\\_statistics\\menu_xxx.js'); } catch (e) { fb.ShowPopupMessage('Missing menu framework file', window.Name + ' (' + window.ScriptInfo.Name + ')'); } // eslint-disable-line no-unused-vars
 }
 
 /* global _menu:readable */
@@ -90,10 +90,10 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			}
 		}.bind(this);
 	};
-	const filtGreat = (num) => ((a) => a.y > num);
-	const filtLow = (num) => ((a) => a.y < num);
-	const filtBetween = (lim) => ((a) => a.y > lim[0] && a.y < lim[1]);
-	const fineGraphs = new Set(['bars', 'fill', 'doughnut', 'pie', 'timeline']).difference(hideCharts || new Set());
+	const filterGreat = (num) => ((a) => a.y > num);
+	const filterLow = (num) => ((a) => a.y < num);
+	const filterBetween = (lim) => ((a) => a.y > lim[0] && a.y < lim[1]);
+	const fineGraphs = new Set(['bars', 'fill', 'doughnut', 'pie', 'timeline', 'horizontal-bars']).difference(hideCharts || new Set());
 	const sizeGraphs = new Set(['scatter', 'lines']).difference(hideCharts || new Set());
 	// Header
 	menu.newEntry({ entryText: this.title, flags: MF_GRAYED });
@@ -105,6 +105,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'timeline', entryText: 'Timeline' },
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'scatter', entryText: 'Scatter' },
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'bars', entryText: 'Bars' },
+			{ isEq: null, key: this.graph.type, value: null, newValue: 'horizontal-bars', entryText: 'Bars (horizontal)' },
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'lines', entryText: 'Lines' },
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'lines-hq', entryText: 'Lines (high quality)' },
 			{ isEq: null, key: this.graph.type, value: null, newValue: 'fill', entryText: 'Fill' },
@@ -120,6 +121,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			{ isEq: null, key: this.dataManipulation.distribution, value: null, newValue: null, entryText: 'Standard graph' },
 			{ isEq: null, key: this.dataManipulation.distribution, value: null, newValue: 'normal', entryText: 'Normal distrib.' },
 		].forEach(createMenuOption('dataManipulation', 'distribution', subMenu));
+		menu.newCheckMenuLast(() => ['normal inverse', 'normal'].includes(this.dataManipulation.distribution));
 		menu.newSeparator();
 	}
 	{
@@ -216,12 +218,13 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			const subMenuLow = menu.newMenu('Lower than', subMenu);
 			// Create a filter entry for each fraction of the max value (duplicates filtered)
 			const parent = this;
-			const options = [...new Set([this.stats.maxY, 1000, 100, 10, 10 / 2, 10 / 3, 10 / 5, 10 / 7].map((frac) => {
-				return Math.round(this.stats.maxY / frac) || 1; // Don't allow zero
-			}))];
+			const options = [...new Set([
+				this.stats.minY, this.stats.maxY,
+				...[1000, 100, 10, 10 / 2, 10 / 3, 10 / 5, 10 / 7].map((frac) => Math.round(this.stats.maxY / frac) || 1)
+			])].sort((a, b) => a - b);
 			{
 				options.map((val) => {
-					return { isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtGreat(val), entryText: val };
+					return { isEq: null, key: this.dataManipulation.filter, value: null, newValue: filterGreat(val), entryText: val };
 				}).forEach(function (option, i) {
 					createMenuOption('dataManipulation', 'filter', subMenuGreat, false)(option);
 					menu.newCheckMenu(subMenuGreat, option.entryText, void (0), () => {
@@ -240,7 +243,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 						}
 						this.changeConfig({
 							dataManipulation: {
-								filter: val === -Infinity ? null : filtGreat(val)
+								filter: val === -Infinity ? null : filterGreat(val)
 							}, callbackArgs: { bSaveProperties: true }
 						});
 					}
@@ -253,7 +256,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			}
 			{
 				options.map((val) => {
-					return { isEq: null, key: this.dataManipulation.filter, value: null, newValue: filtLow(val), entryText: val };
+					return { isEq: null, key: this.dataManipulation.filter, value: null, newValue: filterLow(val), entryText: val };
 				}).forEach(function (option, i) {
 					createMenuOption('dataManipulation', 'filter', subMenuLow, false)(option);
 					menu.newCheckMenu(subMenuLow, option.entryText, void (0), () => {
@@ -272,7 +275,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 						}
 						this.changeConfig({
 							dataManipulation: {
-								filter: val === Infinity ? null : filtLow(val)
+								filter: val === Infinity ? null : filterLow(val)
 							}, callbackArgs: { bSaveProperties: true }
 						});
 					}
@@ -300,7 +303,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 						}
 						this.changeConfig({
 							dataManipulation: {
-								filter: limits.every((n) => !Number.isFinite(n)) ? null : filtBetween(limits)
+								filter: limits.every((n) => !Number.isFinite(n)) ? null : filterBetween(limits)
 							}, callbackArgs: { bSaveProperties: true }
 						});
 					}
@@ -391,7 +394,7 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			[
 				{ isEq: null, key: this.axis.x.bAltLabels, value: null, newValue: !this.axis.x.bAltLabels, entryText: 'Alt. X labels' },
 			].forEach(createMenuOption('axis', ['x', 'bAltLabels'], subMenuTwo, true));
-			if (this.graph.type === 'timeline') {
+			if (this.graph.type === 'timeline' && this.graph.multi) {
 				[
 					{ isEq: null, key: this.graphSpecs.timeline.bAxisCenteredX, value: null, newValue: !this.graphSpecs.timeline.bAxisCenteredX, entryText: 'Center X tick' },
 				].forEach(createMenuOption('graphSpecs', ['timeline', 'bAxisCenteredX'], subMenuTwo, true));
@@ -417,8 +420,8 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 		}
 	}
 	{
-		const bHasDynColor = this.callbacks.config.artColors && Object.hasOwn(this.configuration, 'bDynSerieColor');
-		const bUsesDynColor = bHasDynColor && this.configuration.bDynSerieColor;
+		const bHasDynColor = this.callbacks.config.artColors && Object.hasOwn(this.configuration, 'bDynSeriesColor');
+		const bUsesDynColor = bHasDynColor && this.configuration.bDynSeriesColor;
 		const subMenu = menu.newMenu('Color palette');
 		[
 			{ isEq: null, key: this.chroma.scheme, value: null, newValue: 'diverging', entryText: 'Diverging', flags: bUsesDynColor ? MF_GRAYED : MF_STRING },
@@ -454,11 +457,11 @@ function createStatisticsMenu({ bClear = true, menuKey = 'menu', onBtnUp = null,
 			}, flags: this.chroma.scheme === 'random' || bUsesDynColor ? MF_GRAYED : MF_STRING
 		});
 		menu.newCheckMenu(subMenu, 'Colorblind safe', void (0), () => this.chroma.colorBlindSafe && this.chroma.scheme !== 'random' && !bUsesDynColor);
-		if (this.callbacks.config.artColors && Object.hasOwn(this.configuration, 'bDynSerieColor')) {
+		if (this.callbacks.config.artColors && Object.hasOwn(this.configuration, 'bDynSeriesColor')) {
 			const subMenuTwo = menu.newMenu('Dynamic colors', subMenu);
 			[
-				{ isEq: null, key: this.configuration.bDynSerieColor, value: null, newValue: !this.configuration.bDynSerieColor, entryText: 'Use art colors (background cover mode)' },
-			].forEach(createMenuOption('configuration', 'bDynSerieColor', subMenuTwo, true));
+				{ isEq: null, key: this.configuration.bDynSeriesColor, value: null, newValue: !this.configuration.bDynSeriesColor, entryText: 'Use art colors (background cover mode)' },
+			].forEach(createMenuOption('configuration', 'bDynSeriesColor', subMenuTwo, true));
 			[
 				{ isEq: null, key: this.configuration.bDynBgColor, value: null, newValue: !this.configuration.bDynBgColor, entryText: 'Also apply to background color', flags: bUsesDynColor ? MF_STRING : MF_GRAYED },
 			].forEach(createMenuOption('configuration', 'bDynBgColor', subMenuTwo, true));

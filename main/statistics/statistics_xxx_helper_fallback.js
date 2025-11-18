@@ -1,8 +1,7 @@
 ﻿'use strict';
-//11/03/25
+//01/10/25
 
 /* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports, memoryPrint, Input, isArrayEqual */
-/* global folders:readable */
 
 /*
 	helpers_xxx_UI.js
@@ -25,17 +24,38 @@ const colorbrewer = {
 };
 
 // Cache
-const scaleDPI = {}; // Caches _scale() values;
-const fonts = { notFound: [] }; // Caches _gdifont() values;
+const scaleDPI = { factor: -1, reference: 72 }; // Caches _scale() values;
+const fonts = { notFound: [] }; // Caches _gdiFont() values;
 
 function _scale(size, bRound = true) {
-	if (!scaleDPI[size]) {
-		let DPI;
-		try { DPI = WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI'); }
-		catch (e) { DPI = 96; } // eslint-disable-line no-unused-vars
-		scaleDPI[size] = size * DPI / 72;
+	if (scaleDPI.factor === -1) {
+		if (typeof window.DPI === 'number') {
+			scaleDPI.factor = window.DPI / scaleDPI.reference;
+		} else {
+			try {
+				scaleDPI.factor = Number(WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\WindowMetrics\\AppliedDPI')) / scaleDPI.reference;
+			} catch (e) { // eslint-disable-line no-unused-vars
+				try {
+					scaleDPI.factor = Number(WshShellUI.RegRead('HKCU\\Control Panel\\Desktop\\LogPixels')) / scaleDPI.reference;
+				} catch (e) { // eslint-disable-line no-unused-vars
+					try {
+						scaleDPI.factor = Number(WshShellUI.RegRead('HKCU\\Software\\System\\CurrentControlSet\\Hardware Profiles\\Current\\Software\\Fonts\\LogPixels')) / scaleDPI.reference;
+					} catch (e) { // eslint-disable-line no-unused-vars
+						try {
+							scaleDPI.factor = Number(WshShellUI.RegRead('HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\FontDPI\\LogPixels')) / scaleDPI.reference;
+						} catch (e) { // eslint-disable-line no-unused-vars
+							try {
+								scaleDPI.factor = Number(WshShellUI.RegRead('HKLM\\System\\CurrentControlSet\\Hardware Profiles\\Current\\Software\\Fonts\\LogPixels')) / scaleDPI.reference;
+							} catch (e) { // eslint-disable-line no-unused-vars
+								scaleDPI.factor = 1;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
-	return (bRound ? Math.round(scaleDPI[size]) : scaleDPI[size]);
+	return (bRound ? Math.round(size * scaleDPI.factor) : size * scaleDPI.factor);
 }
 
 function _gdiFont(name, size, style) {
@@ -45,7 +65,7 @@ function _gdiFont(name, size, style) {
 	}
 	if (fonts[id].Name !== name && !fonts.notFound.includes(name)) { // Display once per session, otherwise it floods the console with the same message...
 		fonts.notFound.push(name);
-		fb.ShowPopupMessage('Missing font: ' + name + '\n\nPlease install dependency found at:\n' + folders.xxx + '_resources', window.Name);
+		fb.ShowPopupMessage('Missing font: ' + name + '\n\nPlease install the required fonts found at:\nhttps://github.com/regorxxx/foobar2000-assets/tree/main/Fonts\n\nA restart is required after installation!', window.Name + ' (' + window.ScriptInfo.Name + ')');
 		console.log('Missing font: ' + name);
 	}
 	return fonts[id];
@@ -73,8 +93,8 @@ function _tt(value, font = 'Segoe UI', fontSize = _scale(10), width = 600) {
 		}
 	};
 
-	this.SetFont = function (font_name, font_size_pxopt, font_styleopt) {
-		this.tooltip.SetFont(font_name, font_size_pxopt, font_styleopt);
+	this.SetFont = function (font_name, font_size_pxOpt, font_styleOpt) {
+		this.tooltip.SetFont(font_name, font_size_pxOpt, font_styleOpt);
 	};
 
 	this.SetMaxWidth = function (width) {
@@ -373,12 +393,12 @@ function _qCond(tag, bUnquote = false) {
 			: tag;
 }
 
-function round(floatnum, decimals, eps = 10 ** -14) {
+function round(floatNum, decimals, eps = 10 ** -14) {
 	let result;
 	if (decimals > 0) {
-		if (decimals === 15) { result = floatnum; }
-		else { result = Math.round(floatnum * Math.pow(10, decimals) + eps) / Math.pow(10, decimals); }
-	} else { result = Math.round(floatnum); }
+		if (decimals === 15) { result = floatNum; }
+		else { result = Math.round(floatNum * Math.pow(10, decimals) + eps) / Math.pow(10, decimals); }
+	} else { result = Math.round(floatNum); }
 	return result;
 }
 
@@ -504,7 +524,7 @@ function _button({
 	iDoubleClickTimer = 250, // ms
 } = {}) {
 	this.paint = (gr, color) => {
-		if (this.w <= 0) { return; }
+		if (this.w <= 1) { return; }
 		// Smooth visibility switch
 		let bLastStep = false;
 		if (this.isVisible && !this.isVisible(this.time, this.timer)) {
@@ -591,9 +611,9 @@ function _button({
 			if (this.lbtnFunc) {
 				if (!this.bDblClk) {
 					if (parent) {
-						this.timeoutLclk = setTimeout(() => this.lbtnFunc.call(parent, x, y, mask, parent, 1), this.iDoubleClickTimer);
+						this.timeoutLClick = setTimeout(() => this.lbtnFunc.call(parent, x, y, mask, parent, 1), this.iDoubleClickTimer);
 					} else {
-						this.timeoutLclk = setTimeout(() => this.lbtnFunc(x, y, mask, 1), this.iDoubleClickTimer);
+						this.timeoutLClick = setTimeout(() => this.lbtnFunc(x, y, mask, 1), this.iDoubleClickTimer);
 					}
 				} else { this.bDblClk = false; }
 			}
@@ -627,8 +647,8 @@ function _button({
 				}
 			}
 			this.bDblClk = true;
-			clearTimeout(this.timeoutLclk);
-			this.timeoutLclk = null;
+			clearTimeout(this.timeoutLClick);
+			this.timeoutLClick = null;
 			return true;
 		}
 		return false;
@@ -656,7 +676,7 @@ function _button({
 	this.scrollSpeed = scrollSpeed;
 	this.scrollSteps = scrollSteps;
 	this.iDoubleClickTimer = iDoubleClickTimer;
-	this.timeoutLclk = null;
+	this.timeoutLClick = null;
 }
 
 /*
@@ -664,13 +684,13 @@ function _button({
 */
 function memoryPrint(text, obj) {
 	console.log(
-		window.Name + (text ? ' - ' + text : '') +
+		window.Name + ' (' + window.ScriptInfo.Name + ')' + (text ? ' - ' + text : '') +
 		(
 			typeof obj !== 'undefined'
-				? '\n\tPanel memory usage: ' + roughSizeOfObject(obj)
+				? '\n\t Panel memory usage: ' + roughSizeOfObject(obj)
 				: ''
 		) +
-		'\n\tPanel memory usage: ' + utils.FormatFileSize(window.JsMemoryStats.MemoryUsage) +
+		'\n\t Panel memory usage: ' + utils.FormatFileSize(window.JsMemoryStats.MemoryUsage) +
 		'  /  Total memory usage:: ' + utils.FormatFileSize(window.JsMemoryStats.TotalMemoryLimit)
 	);
 }
