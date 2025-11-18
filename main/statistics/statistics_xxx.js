@@ -1,5 +1,5 @@
 ﻿'use strict';
-//16/10/25
+//16/11/25
 
 /* exported _chart */
 
@@ -787,7 +787,7 @@ function _chart({
 								}
 								if (this.axis.x.labels && i === 0 || !this.axis.x.bSingleLabels) { // keys
 									label.xAxis = { x: 0, y: 0, w: 0, h: 0 };
-									const labelText = xAxisValues[j].split('|')[0].cut(25);
+									const labelText = xAxisValues[j].toString().split('|')[0].cut(25);
 									const tickH = label.xAxis.h = gr.CalcTextHeight(labelText, this.gFont);
 									const tickW = label.xAxis.w = gr.CalcTextWidth(labelText, this.gFont);
 									const border = labelOver.r / seriesLen * (seriesLen - i);
@@ -878,7 +878,7 @@ function _chart({
 							series.forEach((value) => {
 								const axisIdx = Math.abs(xAxisValuesLen - xAxisValues.indexOf(value.x) - 1); // Idx reversed
 								let topMax = value.y / (maxY || 1) * (w - x);
-								const valueX = value.x.split('|')[0];
+								const valueX = value.x.toString().split('|')[0];
 								let yLabel = y - axisIdx * tickW;
 								const flags = (this.axis.x.bAltLabels ? DT_CENTER : DT_LEFT) | DT_END_ELLIPSIS | DT_VCENTER | DT_CALCRECT | DT_NOPREFIX;
 								gr.GdiDrawText(valueX, this.gFont, xAxisColor, x + this.axis.y.width * 2, yLabel - tickW, topMax - this.axis.y.width, tickW, flags);
@@ -987,7 +987,7 @@ function _chart({
 						const drawLabelW = bFitTicks ? tickW : tickW * 3;
 						let lastLabel = x;
 						xAxisValues.forEach((valueX, i) => {
-							valueX = valueX.split('|')[0].cut(25);
+							valueX = valueX.toString().split('|')[0].cut(25);
 							const xLabel = x + i * tickW;
 							// Don't paint labels when they can't be fitted properly
 							if (!bFitTicks) {
@@ -1034,7 +1034,7 @@ function _chart({
 					if (!bFitTicks) { offsetTickText -= tickW; }
 					let lastLabel = x;
 					xAxisValues.forEach((valueX, i) => {
-						valueX = valueX.split('|')[0].cut(25);
+						valueX = valueX.toString().split('|')[0].cut(25);
 						let xLabel = x + i * tickW;
 						// Don't paint labels when they can't be fitted properly
 						if (!bFitTicks) {
@@ -1167,7 +1167,7 @@ function _chart({
 						if (!bFitTicks) { offsetTickText -= tickW; }
 						let lastLabel = x;
 						xAxisValues.forEach((valueX, i) => {
-							valueX = valueX.split('|')[0].cut(25);
+							valueX = valueX.toString().split('|')[0].cut(25);
 							const xTickH = gr.CalcTextHeight(valueX, this.gFont);
 							const xTickW = gr.CalcTextWidth(valueX, this.gFont);
 							let xLabel = x + i * tickW;
