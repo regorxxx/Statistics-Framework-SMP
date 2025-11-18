@@ -2,12 +2,19 @@
 
 ## [Table of Contents]
 - [Unreleased](#unreleased)
+- [0.4.0](#400---2025-11-18)
 - [0.3.1](#031---2023-08-24)
 - [0.3.0](#030---2023-08-24)
 - [0.2.0](#020---2022-08-04)
 - [0.1.0](#010---2022-06-21)
 
 ## [Unreleased][]
+### Added
+### Changed
+### Removed
+### Fixed
+
+## [0.4.0] - 2025-11-18
 ### Added
 - UI: 'fill' chart type.
 - 'graphSpecs' object argument to set graph type specifics variables. Currently only used for timeline to center X-label ticks ('graphSpecs.timeline.bAxisCenteredX').
@@ -68,6 +75,7 @@
 - Fixed minor UI background highlighting glitch when mouse was over a button but also over a point.
 - Minor x-position fix on timeline and bars charts.
 - Minor fixes.
+- Samples fixes.
 
 ## [0.3.1] - 2023-08-24
 ### Added
@@ -120,7 +128,8 @@
 ### Removed
 ### Fixed
 
-[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/regorxxx/Statistics-Framework-SMP/compare/v0.1.0...v0.2.0
