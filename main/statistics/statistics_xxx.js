@@ -1914,7 +1914,7 @@ function _chart({
 		return false;
 	};
 
-	this.mouseWheel = (step, bForce) => {
+	this.wheel = (step, bForce) => {
 		if (this.inFocus || bForce) {
 			this.callbacks.focus.onMouseWheel.call(this, step);
 			return true;
