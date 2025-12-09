@@ -56,7 +56,7 @@ include('statistics_xxx_helper.js');
  * @param {_chartSorting} [o.dataManipulation.sort.z] - [=null] Sorts the series by Z-value, used when o.graph.multi is true
  * @param {_chartSorting} [o.dataManipulation.sort.my] - [='reverse num'] Sorts every Z-group by Y-value, used when o.graph.multi is true
  * @param {_chartSorting} [o.dataManipulation.sort.mz] - [='reverse num'] Sorts every Z-group by Z-value, used when o.graph.multi is true
- * @param {(point: {x: string, y: number, total: number}, idx: number, series: any[]) => boolean} [o.dataManipulation.filter] - [=null]
+ * @param {string|(point: {x: string, y: number, total: number}, idx: number, series: any[]) => boolean} [o.dataManipulation.filter] - [=null]
  * @param {boolean} [o.dataManipulation.mFilter] - [=true]
  * @param {[number, number]} [o.dataManipulation.slice] - [=[0,10]] Displays only these range of values (by pos) of every series
  * @param {_chartDistrPlot} [o.dataManipulation.distribution] - [=null] Fits the data into a distribution function
@@ -2010,6 +2010,24 @@ function _chart({
 
 	this.filter = () => { // Filter points with user provided function
 		if (!this.dataManipulation.filter) { return; }
+		if (typeof this.dataManipulation.filter === 'string') {
+			let filter = null;
+			const matches = this.dataManipulation.filter.match(/function ?(?:.*)?\((.*)\n?\) {\n?((?:.|\n)*)?\n?}/i);
+			if (matches) {
+				const args = (matches[1] || '').split(',');
+				const body = matches[2] || null;
+				if (args.length && body) { try { filter = Function(...args, body); } catch (e) { /* empty */ } } // eslint-disable-line no-unused-vars
+			}
+			if (filter) {
+				console.log('Statistics: parsed filter as Function');
+				if (this.configuration.bDebug) { console.log(filter); }
+			} else {
+				console.log('Statistics: error parsing filter as Function');
+				if (this.configuration.bDebug) { console.log(this.dataManipulation.filter); }
+			}
+			this.dataManipulation.filter = filter;
+			if (!this.dataManipulation.filter) { return; }
+		}
 		if (this.configuration.bProfile) { this.profile.CheckPoint('Filter data'); }
 		this.dataDraw = this.dataDraw.map((series) => series.filter(this.dataManipulation.filter));
 		if (this.configuration.bDebug) { memoryPrint('filter', this.dataDraw); }
@@ -2826,6 +2844,10 @@ function _chart({
 		return this.sortKey;
 	};
 
+	this.serializeFunction = (func) => {
+		return func.toString().replaceAll('\n', '').replace('function anonymous', 'function ');
+	};
+
 	this.initData = () => {
 		// Clean calculated offsets
 		this.margin.leftAuto = this.margin.left;
@@ -2873,7 +2895,7 @@ function _chart({
 	this.dataCoords = this.dataDraw.map(() => []);
 	/** @type {Map[]>} */
 	this.dataTotal = [];
-	/** @type {{sort: {x:string|null, y:string|null, z:string|null, my:string|null, mz:string|null}, filter: null|function, slice: [number, number], distribution: null|string, probabilityPlot: null|string, group: number}} */
+	/** @type {{sort: {x:string|null, y:string|null, z:string|null, my:string|null, mz:string|null}, filter: null|string|function, slice: [number, number], distribution: null|string, probabilityPlot: null|string, group: number}} */
 	this.dataManipulation;
 	if (dataManipulation) {
 		if (dataManipulation.sort) { this.dataManipulation.sort = { ...this.dataManipulation.sort, ...dataManipulation.sort }; }

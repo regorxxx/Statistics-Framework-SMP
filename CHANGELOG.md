@@ -10,7 +10,9 @@
 
 ## [Unreleased][]
 ### Added
+- '.serializeFunction()' method added to stringify functions.
 ### Changed
+- 'dataManipulation.filter' function can now be a stringified function which is evaluated at runtime. For ex. "function (p) {return p.y > 5;}".
 - Better adjustments of X-Axis labels in case there is not enough width to fit them all.
 ### Removed
 ### Fixed
@@ -18,7 +20,7 @@
 
 ## [0.4.0] - 2025-11-18
 ### Added
-- UI: 'fill' chart type.
+- 'fill' chart type.
 - 'graphSpecs' object argument to set graph type specifics variables. Currently only used for timeline to center X-label ticks ('graphSpecs.timeline.bAxisCenteredX').
 - 'chroma.interpolation' for chroma schemes, now set to 'lrgb' by default. See [available modes here](https://regorxxx.github.io/chroma.js/#scalemode).
 - 'graph.pointAlpha' to set transparency for data points on all chart types.
