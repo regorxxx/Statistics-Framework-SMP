@@ -12,7 +12,7 @@
 ### Added
 - '.serializeFunction()' method added to stringify functions.
 - 'buttons.size' variable to control buttons size.
-### Changed
+- '.wheelResize()' method to resize any UI element using the mouse wheel. Should be called within 'on_mouse_wheel' SMP callback.
 - 'dataManipulation.filter' function can now be a stringified function which is evaluated at runtime. For ex. "function (p) {return p.y > 5;}".
 - '.mouseWheel()' method renamed to '.wheel()'.
 - Better adjustments of X-Axis labels in case there is not enough width to fit them all.

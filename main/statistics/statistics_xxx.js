@@ -1926,6 +1926,33 @@ function _chart({
 		return false;
 	};
 
+	this.wheelResize = (step, bForce, callbackArgs) => {
+		if ((this.inFocus || bForce) && step !== 0) {
+			const newConfig = {};
+			if (this.isInPoint(this.mx, this.my, false)) {
+				newConfig.graph = { borderWidth: Math.max(0.5, this.graph.borderWidth + Math.sign(step)) };
+				newConfig.axis = {};
+				Object.keys(this.axis).forEach((key) => {
+					newConfig.axis[key] = {};
+					newConfig.axis[key].width = Math.max(0, this.axis[key].width + Math.sign(step));
+				});
+			} else if (this.isOnButton(this.mx, this.my)) {
+				newConfig.buttons = { size: Math.max(10, this.buttons.size + Math.sign(step)) };
+			} else if (this.trace(this.mx, this.my)) {
+				newConfig.margin = { ...this.margin };
+				Object.keys(this.margin).forEach((key) => {
+					newConfig.margin[key] *= 1 + 0.1 * Math.sign(step);
+					newConfig.margin[key] = Math.max(0, newConfig.margin[key]);
+				});
+			}
+			if (Object.keys(newConfig).length !== 0) {
+				this.changeConfig({ ...newConfig, bPaint: true, callbackArgs });
+				return true;
+			}
+		}
+		return false;
+	};
+
 	this.keyUp = (vKey) => { // Switch animations when releasing keys
 		if (this.inFocus) {
 			switch (vKey) { // NOSONAR
