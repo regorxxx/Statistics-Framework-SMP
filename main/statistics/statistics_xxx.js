@@ -2491,6 +2491,13 @@ function _chart({
 					this.sortKey = null;
 				}
 			}
+			if (this.dataManipulation.slice && Object.hasOwn(dataManipulation, 'filter') && !Object.hasOwn(dataManipulation, 'slice')) {
+				const max = this.getMaxRange();
+				const range = Math.max(this.dataManipulation.slice[1] - Math.max(this.dataManipulation.slice[0], 0), 1);
+				if (this.dataManipulation.slice[0] >= max) { this.dataManipulation.slice[0] = 0; }
+				if (range >= max) { this.dataManipulation.slice[1] = Infinity; }
+				else { this.dataManipulation.slice[1] = this.dataManipulation.slice[0] + range; }
+			}
 		}
 		if (graph) {
 			if (graph.type && graph.type !== this.graph.type) {
@@ -2536,15 +2543,6 @@ function _chart({
 			if (dataAsync) { this.initDataAsync(); }
 			else if (bCheckColors && this.dataAsync) { this.dataAsync.then(() => this.checkColors()); } // NOSONAR
 		} // May be managed by the chart or externally
-		if (dataManipulation && Object.hasOwn(dataManipulation, 'filter') && !Object.hasOwn(dataManipulation, 'slice')) {
-			const back = [...this.dataManipulation.slice];
-			const max = this.getMaxRange();
-			const range = Math.max(this.dataManipulation.slice[1] - Math.max(this.dataManipulation.slice[0], 0), 1);
-			if (this.dataManipulation.slice[0] >= max) { this.dataManipulation.slice[0] = 0; }
-			if (range >= max) { this.dataManipulation.slice[1] = Infinity; }
-			else { this.dataManipulation.slice[1] = this.dataManipulation.slice[0] + range; }
-			if (back[0] !== this.dataManipulation.slice[0] || back[1] !== this.dataManipulation.slice[1]) { this.initData(); }
-		}
 		if (callback && isFunction(callback)) { callback.call(this, this.exportConfig(), arguments[0], callbackArgs); }
 		if (bPaint) { this.repaint(); }
 		return this;
