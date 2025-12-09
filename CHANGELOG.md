@@ -17,6 +17,7 @@
 ### Removed
 ### Fixed
 - Fixed compatibility bug with JSplitter (any version) due to improper constructor used on JS Host as reported [here](https://github.com/regorxxx/Infinity-Tools-SMP/pull/6) and [here](https://hydrogenaudio.org/index.php/topic,126743.msg1073615.html#msg1073615).
+- Fixed crash on Y-axis settings change. See [Issue 1](https://github.com/regorxxx/Timeline-SMP/issues/1).
 
 ## [0.4.0] - 2025-11-18
 ### Added

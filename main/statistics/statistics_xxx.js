@@ -2533,9 +2533,11 @@ function _chart({
 		if (bCheckColors && !dataAsync && !this.dataAsync) { this.checkColors(); } // NOSONAR
 		if (axis) {
 			if (axis.x) { this.axis.x = { ...this.axis.x, ...axis.x }; }
-			if (axis.y) { this.axis.y = { ...this.axis.y, ...axis.y }; }
+			if (axis.y) {
+				this.axis.y = { ...this.axis.y, ...axis.y };
+				if (Object.hasOwn(axis.y, 'show')) { bResizeButtons = true; }
+			}
 			if (axis.z) { this.axis.z = { ...this.axis.z, ...axis.z }; }
-			if (Object.hasOwn(axis.y, 'show')) { bResizeButtons = true; }
 		}
 		if (graphSpecs) {
 			if (graphSpecs.timeline) { this.graphSpecs.timeline = { ...this.graphSpecs.timeline, ...graphSpecs.timeline }; }
