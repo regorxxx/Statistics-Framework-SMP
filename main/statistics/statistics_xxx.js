@@ -1010,7 +1010,7 @@ function _chart({
 								xLine += tickW / 2;
 								if (this.dataManipulation.group % 2 !== 0) {
 									const [series, idx] = this.tracePoint(xLine, yPos - this.axis.x.width - (y - h) / 2);
-									if (series !== -1 && idx !== -1) {
+									if (this.isValidPoint(series, idx)) {
 										const coords = this.sizePoint(this.dataCoords[series][idx], false);
 										hLine += coords.h;
 									}
@@ -1498,6 +1498,14 @@ function _chart({
 		return [-1, -1];
 	};
 
+	this.isInPoint = (x, y, bCacheNear = false) => {
+		return this.isValidPoint(...this.tracePoint(x, y, bCacheNear));
+	};
+
+	this.isValidPoint = (series, idx) => {
+		return series !== -1 && idx !== -1;
+	};
+
 	this.trace = (x, y) => {
 		return (x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h);
 	};
@@ -1568,7 +1576,7 @@ function _chart({
 				}
 				const [series, idx] = this.tracePoint(x, y, true); // This must be calculated always to have a point after zoom clicking
 				if (!bInButton) {
-					const bPoint = series !== -1 && idx !== -1;
+					const bPoint = this.isValidPoint(series, idx);
 					const bPaint = this.currPoint[0] !== series || this.currPoint[1] !== idx;
 					if (bPaint) {
 						let coords;
@@ -1714,7 +1722,7 @@ function _chart({
 
 	let prevX = null;
 	const cleanPrevX = debounce((release) => { !utils.IsKeyPressed(release) && (prevX = null); }, 500);
-	this.calcScrollSlice = (x, currSlice = this.dataManipulation.slice, points = this.getMaxRange()) => {
+	this.calcScrollSlice = (x, currSlice = this.getLeftRange(), points = this.getMaxRange()) => {
 		if (!prevX) { prevX = x; return []; }
 		const diff = prevX - x;
 		if (Math.abs(diff) < _scale(30)) { return []; }
