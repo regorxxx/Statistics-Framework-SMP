@@ -763,6 +763,7 @@ function _chart({
 		/*
 			Draw for all graphs
 		*/
+		const minTickW = Math.min(w / 15, _scale(40));
 		switch (graphType) {
 			case 'doughnut':
 			case 'pie':
@@ -982,7 +983,6 @@ function _chart({
 				if (this.axis.x.show) {
 					if (this.axis.x.show && this.axis.x.labels) {
 						const yPos = (y - h) + this.margin.top - this.graph.borderWidth / 2 - (this.axis.x.bAltLabels ? 0 : (y - h) / 2);
-						const minTickW = w / 30;
 						const bFitTicks = w / tickW < 30;
 						const drawLabelW = bFitTicks ? tickW : tickW * 3;
 						let lastLabel = x;
@@ -1029,7 +1029,6 @@ function _chart({
 			case 'bars': // NOSONAR [fallthrough]
 				if (this.axis.x.show && this.axis.x.labels && this.axis.x.bAltLabels && graphType !== 'timeline') {
 					const yLabel = (y - h) / 2;
-					const minTickW = w / 30;
 					const bFitTicks = w / tickW < 30;
 					if (!bFitTicks) { offsetTickText -= tickW; }
 					let lastLabel = x;
@@ -1161,7 +1160,6 @@ function _chart({
 					if (graphType !== 'timeline') {
 						const last = xAxisValuesLen - 1;
 						const borderColor = RGBA(...toRGB(this.mostContrastColor(xAxisColor).color), 150);
-						const minTickW = w / 30;
 						const bFitTicks = w / tickW < 30;
 						const drawLabelW = bFitTicks ? tickW : tickW * 3;
 						if (!bFitTicks) { offsetTickText -= tickW; }

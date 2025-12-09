@@ -11,9 +11,10 @@
 ## [Unreleased][]
 ### Added
 ### Changed
+- Better adjustments of X-Axis labels in case there is not enough width to fit them all.
 ### Removed
 ### Fixed
-- JSplitter: fixed compatibility bug with JSplitter (any version) due to improper constructor used on JS Host as reported [here](https://github.com/regorxxx/Infinity-Tools-SMP/pull/6) and [here](https://hydrogenaudio.org/index.php/topic,126743.msg1073615.html#msg1073615).
+- Fixed compatibility bug with JSplitter (any version) due to improper constructor used on JS Host as reported [here](https://github.com/regorxxx/Infinity-Tools-SMP/pull/6) and [here](https://hydrogenaudio.org/index.php/topic,126743.msg1073615.html#msg1073615).
 
 ## [0.4.0] - 2025-11-18
 ### Added
