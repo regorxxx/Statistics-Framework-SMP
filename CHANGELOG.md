@@ -11,10 +11,12 @@
 ## [Unreleased][]
 ### Added
 - '.serializeFunction()' method added to stringify functions.
+- 'buttons.size' variable to control buttons size.
 ### Changed
 - 'dataManipulation.filter' function can now be a stringified function which is evaluated at runtime. For ex. "function (p) {return p.y > 5;}".
 - '.mouseWheel()' method renamed to '.wheel()'.
 - Better adjustments of X-Axis labels in case there is not enough width to fit them all.
+- Buttons are now resized based on the 'buttons.size' variable at runtime.
 ### Removed
 ### Fixed
 - Fixed compatibility bug with JSplitter (any version) due to improper constructor used on JS Host as reported [here](https://github.com/regorxxx/Infinity-Tools-SMP/pull/6) and [here](https://hydrogenaudio.org/index.php/topic,126743.msg1073615.html#msg1073615).
