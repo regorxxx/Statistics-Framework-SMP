@@ -1,7 +1,7 @@
 ﻿'use strict';
-//01/10/25
+//09/12/25
 
-/* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports, memoryPrint, Input, isArrayEqual */
+/* exported colorbrewer, opaqueColor, invert, chars, isFunction, range, cyclicOffset, getAlpha, _bt, _qCond, round, require, throttle, _button, exports, memoryPrint, Input, isArrayEqual, strNumCollator */
 
 /*
 	helpers_xxx_UI.js
@@ -276,7 +276,7 @@ function roughSizeOfObject(object) {
 		} else if (type === 'object' && value instanceof FbTitleFormat) {
 			bytes += 8;
 			bytes += value.Expression.length * 2;
-		} else if (type === 'object' && toType(value) === 'FbMetadbHandle') {
+		} else if (type === 'object' && isFbMetadbHandle(value)) {
 			bytes += 24;
 			bytes += value.Path.length * 2;
 			bytes += value.RawPath.length * 2;
@@ -313,6 +313,17 @@ function toType(a) {
 	return ({}).toString.call(a).match(/([a-z]+)(:?\])/i)[1];
 }
 
+function isFbMetadbHandle(a) {
+	if (typeof a === 'object') {
+		if (toType(a) === 'FbMetadbHandle') { return true; }
+		else {
+			// Jsplitter doesn't report proper type: https://hydrogenaudio.org/index.php/topic,126743.msg1073615.html#msg1073615
+			return 'FileSize' in a && 'Length' in a && 'Path' in a && 'RawPath' in a && 'SubSong' in a;
+		}
+	}
+	return false;
+}
+
 function isFunction(obj) {
 	return !!(obj && obj.constructor && obj.call && obj.apply);
 }
@@ -341,7 +352,7 @@ Array.prototype.radixSortInt = function (bReverse = false, start, end) { // NOSO
 };
 
 // https://en.wikipedia.org/wiki/Schwartzian_transform
-// or (a, b) => {return a[1].localeCompare(b[1]);}
+// or (a, b) => {return strNumCollator.compare(a[1], b[1]);}
 Array.prototype.schwartzianSort = function (processFunc, sortFunc = (a, b) => a[1] - b[1]) { // NOSONAR
 	return this.map((x) => [x, processFunc(x)]).sort(sortFunc).map((x) => x[0]); // NOSONAR
 };
@@ -364,6 +375,21 @@ String.prototype.cut = function cut(c) { // NOSONAR
 	if (!Object.hasOwn(cutRegex, c)) { cutRegex[c] = new RegExp('^(.{' + c + '}).{2,}', 'g'); }
 	return this.replace(cutRegex[c], '$1…');
 };
+
+if (!String.prototype.replaceAll) {
+	String.prototype.replaceAll = function replaceAll(word, newWord) { // NOSONAR
+		const len = newWord.length;
+		let copy = this;
+		let prevIdx = copy.indexOf(word);
+		let idx = prevIdx;
+		while (idx !== -1) {
+			copy = copy.replace(word, newWord);
+			prevIdx = idx + len;
+			idx = copy.indexOf(word, prevIdx);
+		}
+		return copy;
+	};
+}
 
 function _p(value) {
 	return '(' + value + ')';
@@ -405,6 +431,8 @@ function round(floatNum, decimals, eps = 10 ** -14) {
 /*
 	helpers_xxx_basic_js.js
 */
+const strNumCollator = new Intl.Collator(void (0), { sensitivity: 'base', numeric: true });
+
 let module = {}, exports = {};
 module.exports = null;
 
